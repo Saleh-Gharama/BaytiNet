@@ -58,20 +58,40 @@ class UsageChart extends StatelessWidget {
   }
 
   List<FlSpot> _getSpots() {
+    if (data.isEmpty) return [];
+
     if (filter == 'day') {
-      // Map to 12 points (every 2 hours)
-      List<FlSpot> spots = [];
-      for (int i = 0; i < 12; i++) {
-        // Mocking logic or real logic to aggregate from data
-        double val = 0;
-        if (i < data.length) val = data[i].usageBytes.toDouble();
-        spots.add(FlSpot(i.toDouble() * 2, val));
+      // Aggregate into 12 buckets of 2 hours each
+      List<double> buckets = List.filled(12, 0.0);
+      final now = DateTime.now();
+      final dayAgo = now.subtract(Duration(hours: 24));
+
+      for (var entry in data) {
+        final entryTime = DateTime.fromMillisecondsSinceEpoch(entry.timestamp);
+        if (entryTime.isAfter(dayAgo)) {
+          int hourDiff = now.difference(entryTime).inHours;
+          int bucketIndex = 11 - (hourDiff ~/ 2);
+          if (bucketIndex >= 0 && bucketIndex < 12) {
+            buckets[bucketIndex] += entry.usageBytes.toDouble();
+          }
+        }
       }
-      return spots;
+      return List.generate(12, (i) => FlSpot(i.toDouble() * 2, buckets[i]));
     } else if (filter == 'week') {
-      return List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()));
+      // Aggregate into 7 buckets (days)
+      List<double> buckets = List.filled(7, 0.0);
+      final now = DateTime.now();
+      for (var entry in data) {
+        final entryTime = DateTime.fromMillisecondsSinceEpoch(entry.timestamp);
+        int dayDiff = now.difference(entryTime).inDays;
+        int bucketIndex = 6 - dayDiff;
+        if (bucketIndex >= 0 && bucketIndex < 7) {
+          buckets[bucketIndex] += entry.usageBytes.toDouble();
+        }
+      }
+      return List.generate(7, (i) => FlSpot(i.toDouble(), buckets[i]));
     } else {
-      // Month
+      // Month: Use raw points but spread them out
       return List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()));
     }
   }

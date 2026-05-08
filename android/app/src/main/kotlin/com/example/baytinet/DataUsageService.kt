@@ -94,6 +94,17 @@ class DataUsageService : Service() {
         val notification = createNotification(content)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(1, notification)
+        updateWidget()
+    }
+
+    private fun updateWidget() {
+        val intent = Intent(this, DataUsageWidget::class.java)
+        intent.action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        val ids = android.appwidget.AppWidgetManager.getInstance(application).getAppWidgetIds(
+            android.content.ComponentName(application, DataUsageWidget::class.java)
+        )
+        intent.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        sendBroadcast(intent)
     }
 
     private fun createNotificationChannel() {

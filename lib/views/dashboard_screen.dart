@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../providers/usage_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/format_utils.dart';
@@ -46,31 +47,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
           )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFilterSelector(),
-              SizedBox(height: 24),
-              _buildUsageCard(totalUsage, filterText),
-              SizedBox(height: 32),
-              Text(
-                "الإحصائيات",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Container(
-                height: 250,
-                padding: EdgeInsets.only(top: 20, right: 10, left: 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
+      body: AnimationLimiter(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: AnimationConfiguration.toStaggeredList(
+                duration: const Duration(milliseconds: 600),
+                childAnimationBuilder: (widget) => SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(child: widget),
                 ),
-                child: UsageChart(data: dataForChart.cast(), filter: _activeFilter),
+                children: [
+                  _buildFilterSelector(),
+                  SizedBox(height: 24),
+                  _buildUsageCard(totalUsage, filterText),
+                  SizedBox(height: 32),
+                  Text(
+                    "الإحصائيات",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    height: 250,
+                    padding: EdgeInsets.only(top: 20, right: 10, left: 10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: UsageChart(data: dataForChart.cast(), filter: _activeFilter),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
