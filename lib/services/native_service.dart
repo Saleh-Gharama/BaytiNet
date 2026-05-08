@@ -1,9 +1,11 @@
 import 'package:flutter/services.dart';
+import 'dart:io';
 
 class NativeService {
   static const platform = MethodChannel('com.example.baytinet/usage');
 
   static Future<int> getWifiUsage(int startTime, int endTime) async {
+    if (!Platform.isAndroid) return 0;
     try {
       final int usage = await platform.invokeMethod('getWifiUsage', {
         'startTime': startTime,
@@ -17,6 +19,7 @@ class NativeService {
   }
 
   static Future<bool> hasUsagePermission() async {
+    if (!Platform.isAndroid) return true; // Assume true or handle differently for non-Android
     try {
       final bool hasPermission = await platform.invokeMethod('hasUsagePermission');
       return hasPermission;
@@ -27,6 +30,7 @@ class NativeService {
   }
 
   static Future<void> requestUsagePermission() async {
+    if (!Platform.isAndroid) return;
     try {
       await platform.invokeMethod('requestUsagePermission');
     } on PlatformException catch (e) {
@@ -35,6 +39,7 @@ class NativeService {
   }
 
   static Future<void> startForegroundService() async {
+    if (!Platform.isAndroid) return;
     try {
       await platform.invokeMethod('startForegroundService');
     } on PlatformException catch (e) {
@@ -42,3 +47,4 @@ class NativeService {
     }
   }
 }
+

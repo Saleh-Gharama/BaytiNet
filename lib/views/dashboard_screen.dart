@@ -6,6 +6,8 @@ import '../utils/format_utils.dart';
 import '../widgets/usage_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
@@ -41,9 +43,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text("BaytiNet", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: Icon(
+              themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
             onPressed: () => themeProvider.toggleTheme(),
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -68,7 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: UsageChart(data: dataForChart.cast(), filter: _activeFilter),
+                child: UsageChart(
+                  data: dataForChart.cast(),
+                  filter: _activeFilter,
+                ),
               ),
             ],
           ),
@@ -107,7 +114,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withBlue(255)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withBlue(255),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -129,13 +139,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           SizedBox(height: 8),
           Text(
             FormatUtils.formatBytes(totalUsage),
-            style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.white60, fontSize: 14),
-          ),
+          Text(subtitle, style: TextStyle(color: Colors.white60, fontSize: 14)),
         ],
       ),
     );

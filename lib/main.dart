@@ -20,6 +20,8 @@ void main() async {
 }
 
 class BaytiNetApp extends StatefulWidget {
+  const BaytiNetApp({super.key});
+
   @override
   _BaytiNetAppState createState() => _BaytiNetAppState();
 }
@@ -74,17 +76,16 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
         useMaterial3: true,
       ),
       builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
+        return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
       home: _hasPermission!
           ? DashboardScreen()
-          : PermissionScreen(onGranted: () {
-              setState(() => _hasPermission = true);
-              NativeService.startForegroundService();
-            }),
+          : PermissionScreen(
+              onGranted: () {
+                setState(() => _hasPermission = true);
+                NativeService.startForegroundService();
+              },
+            ),
     );
   }
 }

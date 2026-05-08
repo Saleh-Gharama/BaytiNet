@@ -4,7 +4,7 @@ import '../services/native_service.dart';
 class PermissionScreen extends StatelessWidget {
   final VoidCallback onGranted;
 
-  const PermissionScreen({Key? key, required this.onGranted}) : super(key: key);
+  const PermissionScreen({super.key, required this.onGranted});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,11 @@ class PermissionScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.security, size: 100, color: Theme.of(context).primaryColor),
+            Icon(
+              Icons.security,
+              size: 100,
+              color: Theme.of(context).primaryColor,
+            ),
             SizedBox(height: 32),
             Text(
               "تحتاج BaytiNet إلى إذن الوصول إلى بيانات الاستخدام",
@@ -35,10 +39,10 @@ class PermissionScreen extends StatelessWidget {
                 // Check periodically or wait for return
                 _checkPermission(context);
               },
-              child: Text("منح الإذن الآن"),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
+              child: Text("منح الإذن الآن"),
             ),
           ],
         ),

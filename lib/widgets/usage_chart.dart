@@ -7,7 +7,7 @@ class UsageChart extends StatelessWidget {
   final List<UsageData> data;
   final String filter; // 'day', 'week', 'month'
 
-  const UsageChart({Key? key, required this.data, required this.filter}) : super(key: key);
+  const UsageChart({super.key, required this.data, required this.filter});
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +69,16 @@ class UsageChart extends StatelessWidget {
       }
       return spots;
     } else if (filter == 'week') {
-      return List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()));
+      return List.generate(
+        data.length,
+        (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()),
+      );
     } else {
       // Month
-      return List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()));
+      return List.generate(
+        data.length,
+        (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()),
+      );
     }
   }
 }
