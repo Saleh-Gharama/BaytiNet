@@ -38,115 +38,176 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text("BaytiNet", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text("BaytiNet", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           IconButton(
-            icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode, color: Colors.white),
             onPressed: () => themeProvider.toggleTheme(),
           )
         ],
       ),
-      body: AnimationLimiter(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: AnimationConfiguration.toStaggeredList(
-                duration: const Duration(milliseconds: 600),
-                childAnimationBuilder: (widget) => SlideAnimation(
-                  verticalOffset: 50.0,
-                  child: FadeInAnimation(child: widget),
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: themeProvider.isDarkMode
+              ? [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)]
+              : [Color(0xFF2193b0), Color(0xFF6dd5ed)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -50,
+              left: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.1),
                 ),
-                children: [
-                  _buildFilterSelector(),
-                  SizedBox(height: 24),
-                  _buildUsageCard(totalUsage, filterText),
-                  SizedBox(height: 32),
-                  Text(
-                    "الإحصائيات",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 16),
-                  Container(
-                    height: 250,
-                    padding: EdgeInsets.only(top: 20, right: 10, left: 10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: UsageChart(data: dataForChart.cast(), filter: _activeFilter),
-                  ),
-                ],
               ),
             ),
-          ),
+            Positioned(
+              bottom: 100,
+              right: -30,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blueAccent.withOpacity(0.1),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: AnimationLimiter(
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: AnimationConfiguration.toStaggeredList(
+                        duration: const Duration(milliseconds: 600),
+                        childAnimationBuilder: (widget) => SlideAnimation(
+                          verticalOffset: 50.0,
+                          child: FadeInAnimation(child: widget),
+                        ),
+                        children: [
+                          _buildFilterSelector(),
+                          SizedBox(height: 24),
+                          _buildGlassCard(
+                            child: Column(
+                              children: [
+                                Text(
+                                  "إجمالي استهلاك الواي فاي",
+                                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  FormatUtils.formatBytes(totalUsage),
+                                  style: TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  filterText,
+                                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 32),
+                          Row(
+                            children: [
+                              Icon(Icons.analytics_outlined, color: Colors.white, size: 24),
+                              SizedBox(width: 8),
+                              Text(
+                                "إحصائيات الاستهلاك",
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildGlassCard(
+                            padding: EdgeInsets.only(top: 30, right: 10, left: 10, bottom: 10),
+                            child: Container(
+                              height: 250,
+                              child: UsageChart(data: dataForChart.cast(), filter: _activeFilter),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildFilterSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _filterButton("يوم", 'day'),
-        _filterButton("أسبوع", 'week'),
-        _filterButton("شهر", 'month'),
-      ],
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _filterButton("يوم", 'day'),
+          _filterButton("أسبوع", 'week'),
+          _filterButton("شهر", 'month'),
+        ],
+      ),
     );
   }
 
   Widget _filterButton(String label, String value) {
     bool isActive = _activeFilter == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isActive,
-      onSelected: (selected) {
-        if (selected) setState(() => _activeFilter = value);
-      },
-      selectedColor: Theme.of(context).primaryColor,
-      labelStyle: TextStyle(color: isActive ? Colors.white : null),
+    return GestureDetector(
+      onTap: () => setState(() => _activeFilter = value),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.black87 : Colors.white70,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildUsageCard(int totalUsage, String subtitle) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withBlue(255)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildGlassCard({required Widget child, EdgeInsets? padding}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: double.infinity,
+        padding: padding ?? EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+          borderRadius: BorderRadius.circular(24),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            "إجمالي الاستهلاك",
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          SizedBox(height: 8),
-          Text(
-            FormatUtils.formatBytes(totalUsage),
-            style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.white60, fontSize: 14),
-          ),
-        ],
+        child: child,
       ),
     );
   }

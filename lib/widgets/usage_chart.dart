@@ -12,25 +12,44 @@ class UsageChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Center(child: Text("لا توجد بيانات كافية لعرض الرسم البياني"));
+      return Center(
+        child: Text(
+          "لا توجد بيانات كافية لعرض الرسم البياني",
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
     }
 
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.white.withOpacity(0.05),
+              strokeWidth: 1,
+            );
+          },
+        ),
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 30,
               getTitlesWidget: (value, meta) {
+                String text = "";
                 if (filter == 'day') {
-                  // Show every 4 hours if Day
-                  if (value % 4 == 0) return Text("${value.toInt()}س");
+                  if (value % 4 == 0) text = "${value.toInt()}س";
                 } else if (filter == 'week') {
-                  // Show days
-                  return Text("ي${value.toInt()}");
+                  text = "ي${value.toInt() + 1}";
+                } else {
+                  if (value % 5 == 0) text = "${value.toInt()}";
                 }
-                return const Text("");
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(text, style: TextStyle(color: Colors.white60, fontSize: 10)),
+                );
               },
             ),
           ),
@@ -42,17 +61,44 @@ class UsageChart extends StatelessWidget {
         lineBarsData: [
           LineChartBarData(
             spots: _getSpots(),
-            isCurved: filter == 'month',
-            color: Theme.of(context).primaryColor,
-            barWidth: 4,
+            isCurved: true,
+            gradient: LinearGradient(
+              colors: [Colors.white, Colors.white.withOpacity(0.5)],
+            ),
+            barWidth: 3,
             isStrokeCapRound: true,
-            dotData: FlDotData(show: filter != 'month'),
+            dotData: FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
         ],
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBgColor: Colors.blueAccent.withOpacity(0.8),
+            getTooltipItems: (List<LineBarSpot> touchedSpots) {
+              return touchedSpots.map((LineBarSpot touchedSpot) {
+                final textStyle = TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                );
+                return LineTooltipItem(
+                  FormatUtils.formatBytes(touchedSpot.y.toInt()),
+                  textStyle,
+                );
+              }).toList();
+            },
+          ),
+        ),
       ),
     );
   }
@@ -61,7 +107,6 @@ class UsageChart extends StatelessWidget {
     if (data.isEmpty) return [];
 
     if (filter == 'day') {
-      // Aggregate into 12 buckets of 2 hours each
       List<double> buckets = List.filled(12, 0.0);
       final now = DateTime.now();
       final dayAgo = now.subtract(Duration(hours: 24));
@@ -78,7 +123,6 @@ class UsageChart extends StatelessWidget {
       }
       return List.generate(12, (i) => FlSpot(i.toDouble() * 2, buckets[i]));
     } else if (filter == 'week') {
-      // Aggregate into 7 buckets (days)
       List<double> buckets = List.filled(7, 0.0);
       final now = DateTime.now();
       for (var entry in data) {
@@ -91,7 +135,6 @@ class UsageChart extends StatelessWidget {
       }
       return List.generate(7, (i) => FlSpot(i.toDouble(), buckets[i]));
     } else {
-      // Month: Use raw points but spread them out
       return List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()));
     }
   }

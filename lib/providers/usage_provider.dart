@@ -30,7 +30,7 @@ class UsageProvider with ChangeNotifier {
   }
 
   void _startPeriodicTask() {
-    _timer = Timer.periodic(Duration(minutes: 30), (timer) async {
+    _timer = Timer.periodic(Duration(minutes: 5), (timer) async {
       await collectAndStoreData();
       refreshData();
     });
@@ -38,18 +38,32 @@ class UsageProvider with ChangeNotifier {
 
   Future<void> collectAndStoreData() async {
     final now = DateTime.now();
-    final startOfHour = DateTime(now.year, now.month, now.day, now.hour);
-    final endOfHour = now;
 
-    final usage = await NativeService.getWifiUsage(
-      startOfHour.millisecondsSinceEpoch,
-      endOfHour.millisecondsSinceEpoch
+    // Get the timestamp of the last recorded entry
+    final lastUsage = await _dbHelper.getUsageInRange(
+      now.subtract(Duration(minutes: 10)).millisecondsSinceEpoch,
+      now.millisecondsSinceEpoch
     );
 
-    await _dbHelper.insertUsage(UsageData(
-      timestamp: now.millisecondsSinceEpoch,
-      usageBytes: usage
-    ));
+    int startTime;
+    if (lastUsage.isNotEmpty) {
+      startTime = lastUsage.last.timestamp + 1; // Start right after the last entry
+    } else {
+      startTime = now.subtract(Duration(minutes: 5)).millisecondsSinceEpoch;
+    }
+
+    final usage = await NativeService.getWifiUsage(
+      startTime,
+      now.millisecondsSinceEpoch
+    );
+
+    // Only insert if there's actual usage to keep DB clean
+    if (usage > 0) {
+      await _dbHelper.insertUsage(UsageData(
+        timestamp: now.millisecondsSinceEpoch,
+        usageBytes: usage
+      ));
+    }
 
     // Cleanup old data (older than 2 months)
     final twoMonthsAgo = now.subtract(Duration(days: 60)).millisecondsSinceEpoch;
