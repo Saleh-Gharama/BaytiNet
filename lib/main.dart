@@ -52,6 +52,7 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
     if (_hasPermission == null) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: themeProvider.currentTheme,
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
@@ -60,21 +61,8 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
       title: 'BaytiNet',
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: Color(0xFF2196F3),
-        brightness: Brightness.light,
-        fontFamily: 'Cairo', // Assuming common Arabic font or default
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
-        primaryColor: Color(0xFF2196F3),
-        scaffoldBackgroundColor: Color(0xFF121212),
-        cardColor: Color(0xFF1E1E1E),
-        useMaterial3: true,
-      ),
+      theme: ThemeProvider.lightTheme,
+      darkTheme: ThemeProvider.darkTheme,
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },

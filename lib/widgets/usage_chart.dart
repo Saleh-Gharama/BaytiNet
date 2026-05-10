@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../models/usage_data.dart';
-import '../utils/format_utils.dart';
+import '../providers/theme_provider.dart';
 
 class UsageChart extends StatelessWidget {
   final List<UsageData> data;
@@ -12,44 +12,73 @@ class UsageChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Center(child: Text("لا توجد بيانات كافية لعرض الرسم البياني"));
+      return const Center(child: Text("لا توجد بيانات كافية لعرض الرسم البياني"));
     }
 
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.white.withOpacity(0.05),
+              strokeWidth: 1,
+            );
+          },
+        ),
         titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 30,
+              interval: 1,
               getTitlesWidget: (value, meta) {
+                String text = '';
                 if (filter == 'day') {
-                  // Show every 4 hours if Day
-                  if (value % 4 == 0) return Text("${value.toInt()}س");
+                  if (value.toInt() % 6 == 0) text = '${value.toInt()}س';
                 } else if (filter == 'week') {
-                  // Show days
-                  return Text("ي${value.toInt()}");
+                  text = 'ي${value.toInt() + 1}';
+                } else {
+                  if (value.toInt() % 5 == 0) text = '${value.toInt()}';
                 }
-                return const Text("");
+                return SideTitleWidget(
+                  meta: meta,
+                  child: Text(text, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                );
               },
             ),
           ),
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
+        minX: 0,
+        maxX: _getMaxX(),
+        minY: 0,
         lineBarsData: [
           LineChartBarData(
             spots: _getSpots(),
-            isCurved: filter == 'month',
-            color: Theme.of(context).primaryColor,
-            barWidth: 4,
+            isCurved: true,
+            gradient: const LinearGradient(
+              colors: [ThemeProvider.primaryNeon, ThemeProvider.secondaryNeon],
+            ),
+            barWidth: 3,
             isStrokeCapRound: true,
-            dotData: FlDotData(show: filter != 'month'),
+            dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              gradient: LinearGradient(
+                colors: [
+                  ThemeProvider.primaryNeon.withOpacity(0.2),
+                  ThemeProvider.primaryNeon.withOpacity(0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
         ],
@@ -57,27 +86,36 @@ class UsageChart extends StatelessWidget {
     );
   }
 
+  double _getMaxX() {
+    if (filter == 'day') return 23;
+    if (filter == 'week') return 6;
+    return 30;
+  }
+
   List<FlSpot> _getSpots() {
+    if (data.isEmpty) return [];
+
+    // Sort data by timestamp just in case
+    final sortedData = List<UsageData>.from(data)..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
     if (filter == 'day') {
-      // Map to 12 points (every 2 hours)
-      List<FlSpot> spots = [];
-      for (int i = 0; i < 12; i++) {
-        // Mocking logic or real logic to aggregate from data
-        double val = 0;
-        if (i < data.length) val = data[i].usageBytes.toDouble();
-        spots.add(FlSpot(i.toDouble() * 2, val));
+      // Map timestamps to hour of day (0-23)
+      Map<int, double> hourUsage = {};
+      for (var d in sortedData) {
+        int hour = DateTime.fromMillisecondsSinceEpoch(d.timestamp).hour;
+        hourUsage[hour] = (hourUsage[hour] ?? 0) + d.usageBytes.toDouble();
       }
-      return spots;
+      return List.generate(24, (i) => FlSpot(i.toDouble(), hourUsage[i] ?? 0));
     } else if (filter == 'week') {
+      // Map to day of week (assuming data is for last 7 days)
       return List.generate(
-        data.length,
-        (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()),
+        sortedData.length.clamp(0, 7),
+        (i) => FlSpot(i.toDouble(), sortedData[i].usageBytes.toDouble()),
       );
     } else {
-      // Month
       return List.generate(
-        data.length,
-        (i) => FlSpot(i.toDouble(), data[i].usageBytes.toDouble()),
+        sortedData.length,
+        (i) => FlSpot(i.toDouble(), sortedData[i].usageBytes.toDouble()),
       );
     }
   }
