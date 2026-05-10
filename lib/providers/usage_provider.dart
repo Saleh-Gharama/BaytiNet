@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../services/native_service.dart';
 import '../services/database_helper.dart';
 import '../models/usage_data.dart';
@@ -97,6 +98,16 @@ class UsageProvider with ChangeNotifier {
     );
 
     notifyListeners();
+    _updateWidget();
+  }
+
+  Future<void> _updateWidget() async {
+    const platform = MethodChannel('com.example.baytinet/usage');
+    try {
+      await platform.invokeMethod('updateWidget');
+    } catch (e) {
+      debugPrint("Failed to update widget: $e");
+    }
   }
 
   @override

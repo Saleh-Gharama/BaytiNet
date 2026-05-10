@@ -24,8 +24,12 @@ class MainActivity : FlutterActivity() {
                 "getWifiUsage" -> {
                     val startTime = call.argument<Long>("startTime") ?: 0L
                     val endTime = call.argument<Long>("endTime") ?: System.currentTimeMillis()
-                    val usage = getWifiDataUsage(startTime, endTime)
-                    result.success(usage)
+                    Thread {
+                        val usage = getWifiDataUsage(startTime, endTime)
+                        runOnUiThread {
+                            result.success(usage)
+                        }
+                    }.start()
                 }
                 "hasUsagePermission" -> {
                     result.success(hasUsageStatsPermission())
@@ -41,6 +45,12 @@ class MainActivity : FlutterActivity() {
                     } else {
                         startService(intent)
                     }
+                    result.success(null)
+                }
+                "updateWidget" -> {
+                    val intent = Intent(this, UsageWidgetProvider::class.java)
+                    intent.action = "com.example.baytinet.UPDATE_WIDGET"
+                    sendBroadcast(intent)
                     result.success(null)
                 }
                 else -> {

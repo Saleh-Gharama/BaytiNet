@@ -69,7 +69,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Background Gradient decoration
           Positioned(
             top: -100,
             left: -50,
@@ -86,67 +85,123 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 120, 20, 40),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              bool isWide = constraints.maxWidth > 800;
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 120, 20, 40),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 1200),
+                      child: isWide
+                          ? _buildWideLayout(totalUsage, filterText, dataForChart, usageProvider, themeProvider)
+                          : _buildMobileLayout(totalUsage, filterText, dataForChart, usageProvider, themeProvider),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(int totalUsage, String filterText, List dataForChart, UsageProvider usageProvider, ThemeProvider themeProvider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildUsageHeader(totalUsage, filterText),
+        const SizedBox(height: 32),
+        _buildSectionHeader("التحليلات"),
+        const SizedBox(height: 20),
+        _buildChartCard(dataForChart, themeProvider),
+        const SizedBox(height: 32),
+        _buildSectionHeader("نظرة عامة"),
+        const SizedBox(height: 16),
+        _buildSummaryGrid(usageProvider),
+      ],
+    );
+  }
+
+  Widget _buildWideLayout(int totalUsage, String filterText, List dataForChart, UsageProvider usageProvider, ThemeProvider themeProvider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildUsageHeader(totalUsage, filterText),
                   const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "التحليلات",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      _buildFilterSelector(),
-                    ],
-                  ),
+                  _buildSectionHeader("التحليلات"),
                   const SizedBox(height: 20),
-                  _buildGlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            "مخطط الاستهلاك",
-                            style: TextStyle(
-                              color: themeProvider.isDarkMode ? Colors.white70 : Colors.black54,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 220,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 16, left: 8, bottom: 8),
-                            child: UsageChart(
-                              data: dataForChart.cast(),
-                              filter: _activeFilter,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  const Text(
-                    "نظرة عامة",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSummaryGrid(usageProvider),
+                  _buildChartCard(dataForChart, themeProvider),
                 ],
+              ),
+            ),
+            const SizedBox(width: 32),
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader("نظرة عامة"),
+                  const SizedBox(height: 16),
+                  _buildSummaryGrid(usageProvider, crossAxisCount: 1),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (title == "التحليلات") _buildFilterSelector(),
+      ],
+    );
+  }
+
+  Widget _buildChartCard(List dataForChart, ThemeProvider themeProvider) {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "مخطط الاستهلاك",
+              style: TextStyle(
+                color: themeProvider.isDarkMode ? Colors.white70 : Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 300,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16, left: 8, bottom: 8),
+              child: UsageChart(
+                data: dataForChart.cast(),
+                filter: _activeFilter,
               ),
             ),
           ),
@@ -223,6 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _filterTab("يوم", 'day'),
           _filterTab("أسبوع", 'week'),
@@ -274,17 +330,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSummaryGrid(UsageProvider provider) {
+  Widget _buildSummaryGrid(UsageProvider provider, {int crossAxisCount = 2}) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
+      crossAxisCount: crossAxisCount,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      childAspectRatio: crossAxisCount == 1 ? 3.0 : 1.5,
       children: [
         _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.today_rounded, Colors.orange),
         _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.date_range_rounded, Colors.blue),
+        _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, Colors.purple),
       ],
     );
   }
