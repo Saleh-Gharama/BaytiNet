@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 import '../providers/usage_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/format_utils.dart';
@@ -39,115 +40,282 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text("BaytiNet", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "BaytiNet",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 24,
+            letterSpacing: 1.2,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: Icon(
-              themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+          Container(
+            margin: const EdgeInsets.only(left: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-            onPressed: () => themeProvider.toggleTheme(),
+            child: IconButton(
+              icon: Icon(
+                themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                color: themeProvider.isDarkMode ? ThemeProvider.primaryNeon : Colors.black87,
+              ),
+              onPressed: () => themeProvider.toggleTheme(),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFilterSelector(),
-              SizedBox(height: 24),
-              _buildUsageCard(totalUsage, filterText),
-              SizedBox(height: 32),
-              Text(
-                "الإحصائيات",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      body: Stack(
+        children: [
+          // Background Gradient decoration
+          Positioned(
+            top: -100,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ThemeProvider.primaryNeon.withOpacity(0.15),
               ),
-              SizedBox(height: 16),
-              Container(
-                height: 250,
-                padding: EdgeInsets.only(top: 20, right: 10, left: 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: UsageChart(
-                  data: dataForChart.cast(),
-                  filter: _activeFilter,
-                ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                child: Container(color: Colors.transparent),
               ),
-            ],
+            ),
           ),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 120, 20, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildUsageHeader(totalUsage, filterText),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "التحليلات",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      _buildFilterSelector(),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildGlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            "مخطط الاستهلاك",
+                            style: TextStyle(
+                              color: themeProvider.isDarkMode ? Colors.white70 : Colors.black54,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 220,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 16, left: 8, bottom: 8),
+                            child: UsageChart(
+                              data: dataForChart.cast(),
+                              filter: _activeFilter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    "نظرة عامة",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSummaryGrid(usageProvider),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUsageHeader(int totalUsage, String subtitle) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [ThemeProvider.primaryNeon, Color(0xFFA6CC00)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: ThemeProvider.primaryNeon.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "إجمالي الاستهلاك",
+            style: TextStyle(
+              color: Colors.black54,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            FormatUtils.formatBytes(totalUsage),
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 42,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              subtitle,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFilterSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          _filterTab("يوم", 'day'),
+          _filterTab("أسبوع", 'week'),
+          _filterTab("شهر", 'month'),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterTab(String label, String value) {
+    bool isActive = _activeFilter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _activeFilter = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? ThemeProvider.primaryNeon : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.grey,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassCard({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryGrid(UsageProvider provider) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.5,
       children: [
-        _filterButton("يوم", 'day'),
-        _filterButton("أسبوع", 'week'),
-        _filterButton("شهر", 'month'),
+        _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.today_rounded, Colors.orange),
+        _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.date_range_rounded, Colors.blue),
       ],
     );
   }
 
-  Widget _filterButton(String label, String value) {
-    bool isActive = _activeFilter == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isActive,
-      onSelected: (selected) {
-        if (selected) setState(() => _activeFilter = value);
-      },
-      selectedColor: Theme.of(context).primaryColor,
-      labelStyle: TextStyle(color: isActive ? Colors.white : null),
-    );
-  }
-
-  Widget _buildUsageCard(int totalUsage, String subtitle) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withBlue(255),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            "إجمالي الاستهلاك",
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          SizedBox(height: 8),
-          Text(
-            FormatUtils.formatBytes(totalUsage),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
+  Widget _buildMiniCard(String title, String value, IconData icon, Color color) {
+    return _buildGlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 20),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
             ),
-          ),
-          SizedBox(height: 8),
-          Text(subtitle, style: TextStyle(color: Colors.white60, fontSize: 14)),
-        ],
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

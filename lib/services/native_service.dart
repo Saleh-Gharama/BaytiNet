@@ -1,11 +1,17 @@
 import 'package:flutter/services.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:io' show Platform;
 
 class NativeService {
   static const platform = MethodChannel('com.example.baytinet/usage');
 
+  static bool get _isAndroid {
+    if (kIsWeb) return false;
+    return Platform.isAndroid;
+  }
+
   static Future<int> getWifiUsage(int startTime, int endTime) async {
-    if (!Platform.isAndroid) return 0;
+    if (!_isAndroid) return 0;
     try {
       final int usage = await platform.invokeMethod('getWifiUsage', {
         'startTime': startTime,
@@ -13,37 +19,37 @@ class NativeService {
       });
       return usage;
     } on PlatformException catch (e) {
-      print("Failed to get usage: '${e.message}'.");
+      debugPrint("Failed to get usage: '${e.message}'.");
       return 0;
     }
   }
 
   static Future<bool> hasUsagePermission() async {
-    if (!Platform.isAndroid) return true; // Assume true or handle differently for non-Android
+    if (!_isAndroid) return true; // Assume true or handle differently for non-Android
     try {
       final bool hasPermission = await platform.invokeMethod('hasUsagePermission');
       return hasPermission;
     } on PlatformException catch (e) {
-      print("Failed to check permission: '${e.message}'.");
+      debugPrint("Failed to check permission: '${e.message}'.");
       return false;
     }
   }
 
   static Future<void> requestUsagePermission() async {
-    if (!Platform.isAndroid) return;
+    if (!_isAndroid) return;
     try {
       await platform.invokeMethod('requestUsagePermission');
     } on PlatformException catch (e) {
-      print("Failed to request permission: '${e.message}'.");
+      debugPrint("Failed to request permission: '${e.message}'.");
     }
   }
 
   static Future<void> startForegroundService() async {
-    if (!Platform.isAndroid) return;
+    if (!_isAndroid) return;
     try {
       await platform.invokeMethod('startForegroundService');
     } on PlatformException catch (e) {
-      print("Failed to start foreground service: '${e.message}'.");
+      debugPrint("Failed to start foreground service: '${e.message}'.");
     }
   }
 }
