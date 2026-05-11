@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../services/native_service.dart';
 import '../providers/theme_provider.dart';
 
@@ -10,95 +11,169 @@ class PermissionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              ThemeProvider.primaryNeon.withOpacity(0.05),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: Stack(
+        children: [
+          // Background Glows
+          Positioned(
+            top: -100,
+            left: -100,
+            child: _buildGlowCircle(ThemeProvider.primaryNeon.withOpacity(0.15), 400),
           ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withOpacity(0.1), 350),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  _buildAnimatedIcon(),
+                  const SizedBox(height: 60),
+                  Text(
+                    "نحتاج إلى إذنك",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontSize: 34,
+                          letterSpacing: -1,
+                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "لكي نتمكن من تتبع استهلاك الواي فاي وعرضه بشكل جميل، نحتاج إلى إذن الوصول إلى بيانات الاستخدام.",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
+                          height: 1.6,
+                        ),
+                  ),
+                  const Spacer(),
+                  _buildGlassButton(
+                    context: context,
+                    label: "ابدأ الآن",
+                    onPressed: () async {
+                      await NativeService.requestUsagePermission();
+                      _checkPermission(context);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      "لماذا نحتاج هذا الإذن؟",
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlowCircle(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+        child: Container(color: Colors.transparent),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedIcon() {
+    return Container(
+      width: 180,
+      height: 180,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            ThemeProvider.primaryNeon.withOpacity(0.2),
+            ThemeProvider.primaryNeon.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: ThemeProvider.primaryNeon.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.analytics_outlined,
-                  size: 80,
-                  color: ThemeProvider.primaryNeon,
-                ),
+        border: Border.all(color: ThemeProvider.primaryNeon.withOpacity(0.2), width: 2),
+      ),
+      child: Center(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ThemeProvider.primaryNeon.withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: ThemeProvider.primaryNeon.withOpacity(0.2),
+                    blurRadius: 30,
+                    spreadRadius: 10,
+                  )
+                ],
               ),
-              const SizedBox(height: 48),
-              const Text(
-                "نحتاج إلى إذنك",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "لكي نتمكن من تتبع استهلاك الواي فاي وعرضه بشكل جميل، نحتاج إلى إذن الوصول إلى بيانات الاستخدام.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 60),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await NativeService.requestUsagePermission();
-                    _checkPermission(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ThemeProvider.primaryNeon,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 5,
-                    shadowColor: ThemeProvider.primaryNeon.withOpacity(0.4),
-                  ),
-                  child: const Text(
-                    "متابعة",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextButton(
-                onPressed: () {
-                  // Option to learn more or show a dialog
-                },
-                child: Text(
-                  "لماذا نحتاج هذا الإذن؟",
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.5),
-                  ),
-                ),
-              ),
-            ],
+            ),
+            const Icon(
+              Icons.analytics_rounded,
+              size: 70,
+              color: ThemeProvider.primaryNeon,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassButton({
+    required BuildContext context,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 65,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: ThemeProvider.primaryNeon.withOpacity(0.3),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ThemeProvider.primaryNeon,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),
