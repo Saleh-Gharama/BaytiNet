@@ -24,7 +24,7 @@ class UsageChart extends StatelessWidget {
       LineChartData(
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (touchedSpot) => Theme.of(context).cardColor.withOpacity(0.8),
+            getTooltipColor: (touchedSpot) => Theme.of(context).cardColor.withValues(alpha: 0.8),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((LineBarSpot touchedSpot) {
                 return LineTooltipItem(
@@ -42,7 +42,7 @@ class UsageChart extends StatelessWidget {
           horizontalInterval: 10,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Colors.white.withOpacity(0.03),
+              color: Colors.white.withValues(alpha: 0.03),
               strokeWidth: 1,
             );
           },
@@ -93,16 +93,16 @@ class UsageChart extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  ThemeProvider.primaryNeon.withOpacity(0.3),
-                  ThemeProvider.primaryNeon.withOpacity(0.1),
-                  ThemeProvider.primaryNeon.withOpacity(0),
+                  ThemeProvider.primaryNeon.withValues(alpha: 0.3),
+                  ThemeProvider.primaryNeon.withValues(alpha: 0.1),
+                  ThemeProvider.primaryNeon.withValues(alpha: 0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
             shadow: Shadow(
-              color: ThemeProvider.primaryNeon.withOpacity(0.5),
+              color: ThemeProvider.primaryNeon.withValues(alpha: 0.5),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

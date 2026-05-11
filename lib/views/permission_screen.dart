@@ -17,12 +17,12 @@ class PermissionScreen extends StatelessWidget {
           Positioned(
             top: -100,
             left: -100,
-            child: _buildGlowCircle(ThemeProvider.primaryNeon.withOpacity(0.15), 400),
+            child: _buildGlowCircle(ThemeProvider.primaryNeon.withValues(alpha: 0.15), 400),
           ),
           Positioned(
             bottom: -50,
             right: -50,
-            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withOpacity(0.1), 350),
+            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withValues(alpha: 0.1), 350),
           ),
           SafeArea(
             child: Padding(
@@ -46,7 +46,7 @@ class PermissionScreen extends StatelessWidget {
                     "لكي نتمكن من تتبع استهلاك الواي فاي وعرضه بشكل جميل، نحتاج إلى إذن الوصول إلى بيانات الاستخدام.",
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
+                          color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
                           height: 1.6,
                         ),
                   ),
@@ -56,6 +56,7 @@ class PermissionScreen extends StatelessWidget {
                     label: "ابدأ الآن",
                     onPressed: () async {
                       await NativeService.requestUsagePermission();
+                      if (!context.mounted) return;
                       _checkPermission(context);
                     },
                   ),
@@ -65,7 +66,7 @@ class PermissionScreen extends StatelessWidget {
                     child: Text(
                       "لماذا نحتاج هذا الإذن؟",
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -103,13 +104,13 @@ class PermissionScreen extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [
-            ThemeProvider.primaryNeon.withOpacity(0.2),
-            ThemeProvider.primaryNeon.withOpacity(0.05),
+            ThemeProvider.primaryNeon.withValues(alpha: 0.2),
+            ThemeProvider.primaryNeon.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: ThemeProvider.primaryNeon.withOpacity(0.2), width: 2),
+        border: Border.all(color: ThemeProvider.primaryNeon.withValues(alpha: 0.2), width: 2),
       ),
       child: Center(
         child: Stack(
@@ -120,10 +121,10 @@ class PermissionScreen extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: ThemeProvider.primaryNeon.withOpacity(0.1),
+                color: ThemeProvider.primaryNeon.withValues(alpha: 0.1),
                 boxShadow: [
                   BoxShadow(
-                    color: ThemeProvider.primaryNeon.withOpacity(0.2),
+                    color: ThemeProvider.primaryNeon.withValues(alpha: 0.2),
                     blurRadius: 30,
                     spreadRadius: 10,
                   )
@@ -153,7 +154,7 @@ class PermissionScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: ThemeProvider.primaryNeon.withOpacity(0.3),
+            color: ThemeProvider.primaryNeon.withValues(alpha: 0.3),
             blurRadius: 25,
             offset: const Offset(0, 10),
           ),
@@ -182,10 +183,13 @@ class PermissionScreen extends StatelessWidget {
 
   void _checkPermission(BuildContext context) async {
     bool hasPermission = await NativeService.hasUsagePermission();
+    if (!context.mounted) return;
     if (hasPermission) {
       onGranted();
     } else {
-      Future.delayed(const Duration(seconds: 2), () => _checkPermission(context));
+      Future.delayed(const Duration(seconds: 2), () {
+        if (context.mounted) _checkPermission(context);
+      });
     }
   }
 }

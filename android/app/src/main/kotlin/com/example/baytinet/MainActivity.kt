@@ -24,8 +24,13 @@ class MainActivity : FlutterActivity() {
                 "getWifiUsage" -> {
                     val startTime = call.argument<Long>("startTime") ?: 0L
                     val endTime = call.argument<Long>("endTime") ?: System.currentTimeMillis()
-                    val usage = getWifiDataUsage(startTime, endTime)
-                    result.success(usage)
+                    // Run in background thread to avoid ANR
+                    Thread {
+                        val usage = getWifiDataUsage(startTime, endTime)
+                        runOnUiThread {
+                            result.success(usage)
+                        }
+                    }.start()
                 }
                 "hasUsagePermission" -> {
                     result.success(hasUsageStatsPermission())

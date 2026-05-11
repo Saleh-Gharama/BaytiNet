@@ -37,7 +37,6 @@ class ThemeProvider with ChangeNotifier {
       secondary: secondaryNeon,
       tertiary: accentPink,
       surface: darkCard,
-      background: darkBg,
       onSurface: Colors.white,
     ),
     appBarTheme: const AppBarTheme(
@@ -71,7 +70,6 @@ class ThemeProvider with ChangeNotifier {
       secondary: secondaryNeon,
       tertiary: accentPink,
       surface: lightCard,
-      background: lightBg,
       onSurface: Colors.black,
     ),
     appBarTheme: const AppBarTheme(

@@ -23,7 +23,7 @@ class BaytiNetApp extends StatefulWidget {
   const BaytiNetApp({super.key});
 
   @override
-  _BaytiNetAppState createState() => _BaytiNetAppState();
+  State<BaytiNetApp> createState() => _BaytiNetAppState();
 }
 
 class _BaytiNetAppState extends State<BaytiNetApp> {

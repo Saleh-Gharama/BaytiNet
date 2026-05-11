@@ -10,7 +10,7 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  _DashboardScreenState createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
@@ -50,9 +50,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+              color: themeProvider.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: IconButton(
               icon: Icon(
@@ -70,12 +70,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Positioned(
             top: -50,
             right: -50,
-            child: _buildGlowCircle(ThemeProvider.primaryNeon.withOpacity(0.2), 250),
+            child: _buildGlowCircle(ThemeProvider.primaryNeon.withValues(alpha: 0.2), 250),
           ),
           Positioned(
             bottom: 100,
             left: -100,
-            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withOpacity(0.15), 300),
+            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withValues(alpha: 0.15), 300),
           ),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -226,7 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         gradient: LinearGradient(
           colors: [
             ThemeProvider.primaryNeon,
-            ThemeProvider.primaryNeon.withOpacity(0.8),
+            ThemeProvider.primaryNeon.withValues(alpha: 0.8),
             const Color(0xFFA6CC00),
           ],
           begin: Alignment.topLeft,
@@ -235,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: ThemeProvider.primaryNeon.withOpacity(0.25),
+            color: ThemeProvider.primaryNeon.withValues(alpha: 0.25),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -255,7 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              Icon(Icons.wifi_tethering_rounded, color: Colors.black.withOpacity(0.4)),
+              Icon(Icons.wifi_tethering_rounded, color: Colors.black.withValues(alpha: 0.4)),
             ],
           ),
           const SizedBox(height: 8),
@@ -272,7 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -293,9 +293,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withOpacity(0.4),
+        color: Theme.of(context).cardColor.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -321,7 +321,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: ThemeProvider.primaryNeon.withOpacity(0.3),
+                    color: ThemeProvider.primaryNeon.withValues(alpha: 0.3),
                     blurRadius: 10,
                   )
                 ]
@@ -346,10 +346,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withOpacity(0.6),
+            color: Theme.of(context).cardColor.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               width: 1,
             ),
           ),
@@ -390,7 +390,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 22),
