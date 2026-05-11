@@ -16,11 +16,12 @@ class ThemeProvider with ChangeNotifier {
   static const Color primaryNeon = Color(0xFFD0FF00); // Lime Green
   static const Color secondaryNeon = Color(0xFF00E5FF); // Cyan
   static const Color accentPink = Color(0xFFFF2D55);
+  static const Color surfaceGlass = Color(0x1AFFFFFF);
 
-  static const Color darkBg = Color(0xFF0A0A0A);
-  static const Color darkCard = Color(0xFF1A1A1A);
+  static const Color darkBg = Color(0xFF000000);
+  static const Color darkCard = Color(0xFF121212);
 
-  static const Color lightBg = Color(0xFFF5F5F7);
+  static const Color lightBg = Color(0xFFF2F2F7);
   static const Color lightCard = Colors.white;
 
   ThemeData get currentTheme => isDarkMode ? darkTheme : lightTheme;
@@ -34,17 +35,28 @@ class ThemeProvider with ChangeNotifier {
     colorScheme: ColorScheme.dark(
       primary: primaryNeon,
       secondary: secondaryNeon,
+      tertiary: accentPink,
       surface: darkCard,
       background: darkBg,
+      onSurface: Colors.white,
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+        color: Colors.white,
+      ),
     ),
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white),
-      bodyLarge: TextStyle(fontFamily: 'Cairo', color: Colors.white70),
+      displayLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, color: Colors.white, fontSize: 32),
+      displayMedium: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 24),
+      bodyLarge: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 16),
+      bodyMedium: TextStyle(fontFamily: 'Cairo', color: Colors.white70, fontSize: 14),
+      labelLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: primaryNeon),
     ),
   );
 
@@ -57,17 +69,28 @@ class ThemeProvider with ChangeNotifier {
     colorScheme: ColorScheme.light(
       primary: primaryNeon,
       secondary: secondaryNeon,
+      tertiary: accentPink,
       surface: lightCard,
       background: lightBg,
+      onSurface: Colors.black,
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+        color: Colors.black,
+      ),
     ),
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.black),
-      bodyLarge: TextStyle(fontFamily: 'Cairo', color: Colors.black87),
+      displayLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, color: Colors.black, fontSize: 32),
+      displayMedium: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.black, fontSize: 24),
+      bodyLarge: TextStyle(fontFamily: 'Cairo', color: Colors.black, fontSize: 16),
+      bodyMedium: TextStyle(fontFamily: 'Cairo', color: Colors.black54, fontSize: 14),
+      labelLarge: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.black87),
     ),
   );
 }

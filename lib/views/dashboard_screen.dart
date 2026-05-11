@@ -42,20 +42,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "BaytiNet",
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 24,
-            letterSpacing: 1.2,
-          ),
+          style: Theme.of(context).appBarTheme.titleTextStyle,
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(left: 16),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
+              color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: IconButton(
               icon: Icon(
@@ -69,144 +66,221 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Background Gradient decoration
+          // Background Glows
           Positioned(
-            top: -100,
-            left: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: ThemeProvider.primaryNeon.withOpacity(0.15),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
+            top: -50,
+            right: -50,
+            child: _buildGlowCircle(ThemeProvider.primaryNeon.withOpacity(0.2), 250),
           ),
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 120, 20, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUsageHeader(totalUsage, filterText),
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "التحليلات",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      _buildFilterSelector(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildGlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            "مخطط الاستهلاك",
-                            style: TextStyle(
-                              color: themeProvider.isDarkMode ? Colors.white70 : Colors.black54,
-                              fontWeight: FontWeight.w600,
+          Positioned(
+            bottom: 100,
+            left: -100,
+            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withOpacity(0.15), 300),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              bool isWide = constraints.maxWidth > 800;
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 120, 20, 40),
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: isWide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildUsageHeader(totalUsage, filterText),
+                                      const SizedBox(height: 32),
+                                      _buildAnalyticsSection(themeProvider, dataForChart),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 32),
+                                Expanded(
+                                  flex: 1,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "نظرة عامة",
+                                        style: Theme.of(context).textTheme.displayMedium,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _buildSummaryGrid(usageProvider, isWide: true),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildUsageHeader(totalUsage, filterText),
+                                const SizedBox(height: 32),
+                                _buildAnalyticsSection(themeProvider, dataForChart),
+                                const SizedBox(height: 32),
+                                Text(
+                                  "نظرة عامة",
+                                  style: Theme.of(context).textTheme.displayMedium,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSummaryGrid(usageProvider, isWide: false),
+                              ],
                             ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 220,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 16, left: 8, bottom: 8),
-                            child: UsageChart(
-                              data: dataForChart.cast(),
-                              filter: _activeFilter,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  const Text(
-                    "نظرة عامة",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSummaryGrid(usageProvider),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _buildGlowCircle(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+        child: Container(color: Colors.transparent),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsSection(ThemeProvider themeProvider, List dataForChart) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "التحليلات",
+              style: Theme.of(context).textTheme.displayMedium,
+            ),
+            _buildFilterSelector(),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: ThemeProvider.primaryNeon,
+                        boxShadow: [
+                          BoxShadow(color: ThemeProvider.primaryNeon, blurRadius: 8),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "مخطط الاستهلاك",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 280,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20, left: 10, bottom: 10),
+                  child: UsageChart(
+                    data: dataForChart.cast(),
+                    filter: _activeFilter,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildUsageHeader(int totalUsage, String subtitle) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [ThemeProvider.primaryNeon, Color(0xFFA6CC00)],
+        gradient: LinearGradient(
+          colors: [
+            ThemeProvider.primaryNeon,
+            ThemeProvider.primaryNeon.withOpacity(0.8),
+            const Color(0xFFA6CC00),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: ThemeProvider.primaryNeon.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: ThemeProvider.primaryNeon.withOpacity(0.25),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "إجمالي الاستهلاك",
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "إجمالي الاستهلاك",
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Icon(Icons.wifi_tethering_rounded, color: Colors.black.withOpacity(0.4)),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             FormatUtils.formatBytes(totalUsage),
             style: const TextStyle(
               color: Colors.black,
-              fontSize: 42,
+              fontSize: 48,
               fontWeight: FontWeight.w900,
+              letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.black.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               subtitle,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -217,12 +291,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildFilterSelector() {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).cardColor.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _filterTab("يوم", 'day'),
           _filterTab("أسبوع", 'week'),
@@ -236,18 +312,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool isActive = _activeFilter == value;
     return GestureDetector(
       onTap: () => setState(() => _activeFilter = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isActive ? ThemeProvider.primaryNeon : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: ThemeProvider.primaryNeon.withOpacity(0.3),
+                    blurRadius: 10,
+                  )
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.black : Colors.grey,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
+            color: isActive ? Colors.black : Colors.grey.shade500,
+            fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),
@@ -256,16 +341,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(24),
+            color: Theme.of(context).cardColor.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1.5,
+              color: Colors.white.withOpacity(0.08),
+              width: 1,
             ),
           ),
           child: child,
@@ -274,17 +359,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSummaryGrid(UsageProvider provider) {
+  Widget _buildSummaryGrid(UsageProvider provider, {required bool isWide}) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      crossAxisCount: isWide ? 1 : 2,
+      mainAxisSpacing: 20,
+      crossAxisSpacing: 20,
+      childAspectRatio: isWide ? 2.5 : 1.3,
       children: [
-        _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.today_rounded, Colors.orange),
-        _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.date_range_rounded, Colors.blue),
+        _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, ThemeProvider.primaryNeon),
+        _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, ThemeProvider.secondaryNeon),
+        _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, ThemeProvider.accentPink),
+        _buildMiniCard("الحالة", "نشط", Icons.check_circle_rounded, Colors.greenAccent),
       ],
     );
   }
@@ -292,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildMiniCard(String title, String value, IconData icon, Color color) {
     return _buildGlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -300,19 +387,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: color, size: 20),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
                 Text(
                   title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    fontSize: 22,
+                    letterSpacing: -0.5,
+                  ),
             ),
           ],
         ),
