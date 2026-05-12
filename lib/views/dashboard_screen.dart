@@ -349,8 +349,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: Theme.of(context).cardColor.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
-              width: 1,
+              color: ThemeProvider.primaryNeon.withValues(alpha: 0.15),
+              width: 2.0,
             ),
           ),
           child: child,
@@ -392,6 +392,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: Icon(icon, color: color, size: 22),
                 ),
@@ -404,7 +411,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               value,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 22,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
             ),
