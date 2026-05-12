@@ -20,9 +20,16 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'baytinet.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE usage ADD COLUMN ssid TEXT NOT NULL DEFAULT 'Unknown'");
+    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -30,7 +37,8 @@ class DatabaseHelper {
       CREATE TABLE usage (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp INTEGER NOT NULL,
-        usageBytes INTEGER NOT NULL
+        usageBytes INTEGER NOT NULL,
+        ssid TEXT NOT NULL DEFAULT 'Unknown'
       )
     ''');
   }
@@ -49,6 +57,23 @@ class DatabaseHelper {
       orderBy: 'timestamp ASC',
     );
     return List.generate(maps.length, (i) => UsageData.fromMap(maps[i]));
+  }
+
+  Future<Map<String, int>> getUsageBySsidInRange(int startTime, int endTime) async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT ssid, SUM(usageBytes) as totalUsage
+      FROM usage
+      WHERE timestamp >= ? AND timestamp <= ?
+      GROUP BY ssid
+      ORDER BY totalUsage DESC
+    ''', [startTime, endTime]);
+
+    Map<String, int> result = {};
+    for (var map in maps) {
+      result[map['ssid'] as String] = map['totalUsage'] as int;
+    }
+    return result;
   }
 
   Future<void> deleteOldData(int olderThanTimestamp) async {

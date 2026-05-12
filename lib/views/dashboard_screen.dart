@@ -5,6 +5,7 @@ import '../providers/usage_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/format_utils.dart';
 import '../widgets/usage_chart.dart';
+import 'networks_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -371,7 +372,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, ThemeProvider.primaryNeon),
         _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, ThemeProvider.secondaryNeon),
         _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, ThemeProvider.accentPink),
-        _buildMiniCard("الحالة", "نشط", Icons.check_circle_rounded, Colors.greenAccent),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NetworksScreen()),
+            );
+          },
+          child: _buildMiniCard("الشبكات", "${provider.usageBySsid.length}", Icons.wifi_find_rounded, Colors.greenAccent),
+        ),
       ],
     );
   }

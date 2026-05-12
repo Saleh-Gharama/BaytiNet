@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/native_service.dart';
 import '../providers/theme_provider.dart';
 
@@ -56,6 +57,7 @@ class PermissionScreen extends StatelessWidget {
                     label: "ابدأ الآن",
                     onPressed: () async {
                       await NativeService.requestUsagePermission();
+                      await Permission.location.request();
                       if (!context.mounted) return;
                       _checkPermission(context);
                     },

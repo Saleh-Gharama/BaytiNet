@@ -9,6 +9,7 @@ class UsageProvider with ChangeNotifier {
   List<UsageData> _dailyUsage = [];
   List<UsageData> _weeklyUsage = [];
   List<UsageData> _monthlyUsage = [];
+  Map<String, int> _usageBySsid = {};
 
   int _totalDailyUsage = 0;
   int _totalWeeklyUsage = 0;
@@ -17,6 +18,7 @@ class UsageProvider with ChangeNotifier {
   List<UsageData> get dailyUsage => _dailyUsage;
   List<UsageData> get weeklyUsage => _weeklyUsage;
   List<UsageData> get monthlyUsage => _monthlyUsage;
+  Map<String, int> get usageBySsid => _usageBySsid;
 
   int get totalDailyUsage => _totalDailyUsage;
   int get totalWeeklyUsage => _totalWeeklyUsage;
@@ -46,9 +48,12 @@ class UsageProvider with ChangeNotifier {
       endOfHour.millisecondsSinceEpoch
     );
 
+    final ssid = await NativeService.getSsid();
+
     await _dbHelper.insertUsage(UsageData(
       timestamp: now.millisecondsSinceEpoch,
-      usageBytes: usage
+      usageBytes: usage,
+      ssid: ssid,
     ));
 
     // Cleanup old data (older than 2 months)
@@ -92,6 +97,12 @@ class UsageProvider with ChangeNotifier {
     );
 
     _monthlyUsage = await _dbHelper.getUsageInRange(
+      startOfMonth.millisecondsSinceEpoch,
+      now.millisecondsSinceEpoch
+    );
+
+    // Get usage by SSID for the current month
+    _usageBySsid = await _dbHelper.getUsageBySsidInRange(
       startOfMonth.millisecondsSinceEpoch,
       now.millisecondsSinceEpoch
     );
