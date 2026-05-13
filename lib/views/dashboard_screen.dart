@@ -5,6 +5,7 @@ import '../providers/usage_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/format_utils.dart';
 import '../widgets/usage_chart.dart';
+import 'networks_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -349,8 +350,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: Theme.of(context).cardColor.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
-              width: 1,
+              color: ThemeProvider.primaryNeon.withValues(alpha: 0.15),
+              width: 2.0,
             ),
           ),
           child: child,
@@ -371,7 +372,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, ThemeProvider.primaryNeon),
         _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, ThemeProvider.secondaryNeon),
         _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, ThemeProvider.accentPink),
-        _buildMiniCard("الحالة", "نشط", Icons.check_circle_rounded, Colors.greenAccent),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NetworksScreen()),
+            );
+          },
+          child: _buildMiniCard("الشبكات", "${provider.usageBySsid.length}", Icons.wifi_find_rounded, Colors.greenAccent),
+        ),
       ],
     );
   }
@@ -392,6 +401,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: Icon(icon, color: color, size: 22),
                 ),
@@ -404,7 +420,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               value,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 22,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
             ),

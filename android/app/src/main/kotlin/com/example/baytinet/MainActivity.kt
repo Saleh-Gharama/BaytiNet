@@ -5,11 +5,14 @@ import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import androidx.annotation.NonNull
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -31,6 +34,9 @@ class MainActivity : FlutterActivity() {
                             result.success(usage)
                         }
                     }.start()
+                }
+                "getSsid" -> {
+                    result.success(getCurrentSsid())
                 }
                 "hasUsagePermission" -> {
                     result.success(hasUsageStatsPermission())
@@ -70,6 +76,21 @@ class MainActivity : FlutterActivity() {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             startActivity(intent)
         }
+    }
+
+    private fun getCurrentSsid(): String {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return "إذن الموقع مطلوب"
+        }
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val info = wifiManager.connectionInfo
+        if (info != null) {
+            val ssid = info.ssid
+            if (ssid != null && ssid != "<unknown ssid>") {
+                return ssid.replace("\"", "")
+            }
+        }
+        return "شبكة غير معروفة"
     }
 
     private fun getWifiDataUsage(startTime: Long, endTime: Long): Long {

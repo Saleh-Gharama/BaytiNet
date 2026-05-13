@@ -24,6 +24,17 @@ class NativeService {
     }
   }
 
+  static Future<String> getSsid() async {
+    if (!_isAndroid) return "Wi-Fi Test";
+    try {
+      final String ssid = await platform.invokeMethod('getSsid');
+      return ssid;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get SSID: '${e.message}'.");
+      return "شبكة غير معروفة";
+    }
+  }
+
   static Future<bool> hasUsagePermission() async {
     if (!_isAndroid) return true; // Assume true or handle differently for non-Android
     try {
