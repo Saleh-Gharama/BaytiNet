@@ -63,49 +63,59 @@ class UsageProvider with ChangeNotifier {
 
   Future<void> refreshData() async {
     final now = DateTime.now();
+    final nowMs = now.millisecondsSinceEpoch;
 
-    // Daily (Last 24 hours)
     final startOfDay = DateTime(now.year, now.month, now.day);
-    _totalDailyUsage = await NativeService.getWifiUsage(
-      startOfDay.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
-
-    final dayAgo = now.subtract(Duration(hours: 24));
-    _dailyUsage = await _dbHelper.getUsageInRange(
-      dayAgo.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
-
-    // Weekly (Last 7 days)
-    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6));
-    _totalWeeklyUsage = await NativeService.getWifiUsage(
-      startOfWeek.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
-
-    _weeklyUsage = await _dbHelper.getUsageInRange(
-      startOfWeek.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
-
-    // Monthly (Current month)
+    final dayAgo = now.subtract(const Duration(hours: 24));
+    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
     final startOfMonth = DateTime(now.year, now.month, 1);
-    _totalMonthlyUsage = await NativeService.getWifiUsage(
-      startOfMonth.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
 
-    _monthlyUsage = await _dbHelper.getUsageInRange(
-      startOfMonth.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
+    // Find the earliest start time to fetch all needed data in one query
+    DateTime earliestStart = dayAgo;
+    if (startOfWeek.isBefore(earliestStart)) earliestStart = startOfWeek;
+    if (startOfMonth.isBefore(earliestStart)) earliestStart = startOfMonth;
 
-    // Get usage by SSID for the current month
-    _usageBySsid = await _dbHelper.getUsageBySsidInRange(
-      startOfMonth.millisecondsSinceEpoch,
-      now.millisecondsSinceEpoch
-    );
+    // Optimization: Parallelize native calls and database query
+    final results = await Future.wait([
+      NativeService.getWifiUsage(startOfDay.millisecondsSinceEpoch, nowMs),
+      NativeService.getWifiUsage(startOfWeek.millisecondsSinceEpoch, nowMs),
+      NativeService.getWifiUsage(startOfMonth.millisecondsSinceEpoch, nowMs),
+      _dbHelper.getUsageInRange(earliestStart.millisecondsSinceEpoch, nowMs),
+    ]);
+
+    _totalDailyUsage = results[0] as int;
+    _totalWeeklyUsage = results[1] as int;
+    _totalMonthlyUsage = results[2] as int;
+    final List<UsageData> allData = results[3] as List<UsageData>;
+
+    // Optimization: Filter and aggregate in-memory instead of multiple DB queries
+    final dayAgoMs = dayAgo.millisecondsSinceEpoch;
+    final startOfWeekMs = startOfWeek.millisecondsSinceEpoch;
+    final startOfMonthMs = startOfMonth.millisecondsSinceEpoch;
+
+    _dailyUsage = [];
+    _weeklyUsage = [];
+    _monthlyUsage = [];
+    _usageBySsid = {};
+
+    for (var data in allData) {
+      if (data.timestamp >= dayAgoMs) {
+        _dailyUsage.add(data);
+      }
+      if (data.timestamp >= startOfWeekMs) {
+        _weeklyUsage.add(data);
+      }
+      if (data.timestamp >= startOfMonthMs) {
+        _monthlyUsage.add(data);
+        // Aggregate SSID usage for the month
+        _usageBySsid[data.ssid] = (_usageBySsid[data.ssid] ?? 0) + data.usageBytes;
+      }
+    }
+
+    // Sort SSID usage by volume (to match DB order)
+    var sortedEntries = _usageBySsid.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    _usageBySsid = Map.fromEntries(sortedEntries);
 
     notifyListeners();
   }
