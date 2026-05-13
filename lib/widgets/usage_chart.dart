@@ -128,7 +128,9 @@ class UsageChart extends StatelessWidget {
   List<FlSpot> _getSpots() {
     if (data.isEmpty) return [const FlSpot(0, 0)];
 
-    final sortedData = List<UsageData>.from(data)..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    // Optimization: The data is already sorted by timestamp ASC from the database query.
+    // Re-sorting it here is redundant and costly for large datasets.
+    final sortedData = data;
 
     if (filter == 'day') {
       Map<int, double> hourUsage = {};
