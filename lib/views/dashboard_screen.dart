@@ -403,9 +403,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        spreadRadius: 1,
+                        color: color.withValues(alpha: 0.2),
+                        blurRadius: 6,
+                        spreadRadius: 0,
                       ),
                     ],
                   ),

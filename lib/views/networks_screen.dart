@@ -96,9 +96,9 @@ class NetworksScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: ThemeProvider.primaryNeon.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      spreadRadius: 1,
+                      color: ThemeProvider.primaryNeon.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      spreadRadius: 0,
                     ),
                   ],
                 ),
