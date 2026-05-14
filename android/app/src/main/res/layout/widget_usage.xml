@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+
+    <!-- Lightning Icon (Top Left) -->
+    <FrameLayout
+        android:id="@+id/icon_container"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/ic_lightning_bg">
+        
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_lightning_widget" />
+    </FrameLayout>
+
+    <!-- Content Group (Center) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/icon_container"
+        android:layout_marginLeft="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/usage_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="استهلاك اليوم"
+            android:textColor="#A0A0A0"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif" />
+
+        <TextView
+            android:id="@+id/usage_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.0 ج.ب"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black" />
+    </LinearLayout>
+
+    <!-- App Name (Top Right) -->
+    <TextView
+        android:id="@+id/app_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:text="BaytiNet"
+        android:textColor="#A6CC00"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium" />
+
+</RelativeLayout>

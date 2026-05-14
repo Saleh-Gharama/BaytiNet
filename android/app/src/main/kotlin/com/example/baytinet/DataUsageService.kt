@@ -33,8 +33,18 @@ class DataUsageService : Service() {
                 val usage = getDailyWifiUsage()
                 val usageStr = formatBytes(usage)
                 updateNotification("استهلاك اليوم: $usageStr")
+                updateWidget(usageStr)
             }
         }, 0, 60000) // Update every minute
+    }
+
+    private fun updateWidget(usageStr: String) {
+        val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(this)
+        val componentName = android.content.ComponentName(this, UsageWidgetProvider::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        for (appWidgetId in appWidgetIds) {
+            UsageWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId, usageStr)
+        }
     }
 
     private fun getDailyWifiUsage(): Long {
@@ -68,10 +78,17 @@ class DataUsageService : Service() {
     }
 
     private fun formatBytes(bytes: Long): String {
-        if (bytes < 1024) return "$bytes B"
+        if (bytes < 1024) return "$bytes ب"
         val exp = (Math.log(bytes.toDouble()) / Math.log(1024.0)).toInt()
         val pre = "KMGTPE"[exp - 1]
-        return String.format("%.2f %sB", bytes / Math.pow(1024.0, exp.toDouble()), pre)
+        val suffix = when (pre) {
+            'K' -> "ك.ب"
+            'M' -> "م.ب"
+            'G' -> "ج.ب"
+            'T' -> "ت.ب"
+            else -> "$pre.ب"
+        }
+        return String.format(java.util.Locale.US, "%.1f %s", bytes / Math.pow(1024.0, exp.toDouble()), suffix)
     }
 
     private fun createNotification(content: String): Notification {

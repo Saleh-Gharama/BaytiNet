@@ -11,15 +11,6 @@ class UsageChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return Center(
-        child: Text(
-          "لا توجد بيانات كافية لعرض الرسم البياني",
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
-    }
-
     return LineChart(
       LineChartData(
         lineTouchData: LineTouchData(
@@ -83,6 +74,7 @@ class UsageChart extends StatelessWidget {
             spots: _getSpots(),
             isCurved: true,
             curveSmoothness: 0.35,
+            preventCurveOverShooting: true,
             gradient: const LinearGradient(
               colors: [ThemeProvider.primaryNeon, ThemeProvider.secondaryNeon],
             ),
@@ -128,38 +120,41 @@ class UsageChart extends StatelessWidget {
   List<FlSpot> _getSpots() {
     if (data.isEmpty) return [const FlSpot(0, 0)];
 
-    // Optimization: The data is already sorted by timestamp ASC from the database query.
-    // Re-sorting it here is redundant and costly for large datasets.
     final sortedData = data;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     if (filter == 'day') {
       Map<int, double> hourUsage = {};
       for (var d in sortedData) {
         int hour = DateTime.fromMillisecondsSinceEpoch(d.timestamp).hour;
-        // Convert to MB for visualization
         hourUsage[hour] = (hourUsage[hour] ?? 0) + (d.usageBytes / (1024 * 1024));
       }
       return List.generate(24, (i) => FlSpot(i.toDouble(), hourUsage[i] ?? 0));
     } else if (filter == 'week') {
-      return List.generate(
-        7,
-        (i) {
-          if (i < sortedData.length) {
-            return FlSpot(i.toDouble(), sortedData[i].usageBytes / (1024 * 1024));
-          }
-          return FlSpot(i.toDouble(), 0);
-        },
-      );
+      Map<int, double> dailyUsage = {};
+      for (var d in sortedData) {
+        var date = DateTime.fromMillisecondsSinceEpoch(d.timestamp);
+        var dayDate = DateTime(date.year, date.month, date.day);
+        int diffDays = today.difference(dayDate).inDays;
+        int index = 6 - diffDays;
+        if (index >= 0 && index < 7) {
+          dailyUsage[index] = (dailyUsage[index] ?? 0) + (d.usageBytes / (1024 * 1024));
+        }
+      }
+      return List.generate(7, (i) => FlSpot(i.toDouble(), dailyUsage[i] ?? 0));
     } else {
-      return List.generate(
-        31,
-        (i) {
-          if (i < sortedData.length) {
-            return FlSpot(i.toDouble(), sortedData[i].usageBytes / (1024 * 1024));
-          }
-          return FlSpot(i.toDouble(), 0);
-        },
-      );
+      Map<int, double> dailyUsage = {};
+      for (var d in sortedData) {
+        var date = DateTime.fromMillisecondsSinceEpoch(d.timestamp);
+        var dayDate = DateTime(date.year, date.month, date.day);
+        int diffDays = today.difference(dayDate).inDays;
+        int index = 30 - diffDays;
+        if (index >= 0 && index <= 30) {
+          dailyUsage[index] = (dailyUsage[index] ?? 0) + (d.usageBytes / (1024 * 1024));
+        }
+      }
+      return List.generate(31, (i) => FlSpot(i.toDouble(), dailyUsage[i] ?? 0));
     }
   }
 }

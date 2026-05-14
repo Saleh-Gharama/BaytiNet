@@ -27,7 +27,12 @@ class UsageProvider with ChangeNotifier {
   Timer? _timer;
 
   UsageProvider() {
-    refreshData();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await collectAndStoreData();
+    await refreshData();
     _startPeriodicTask();
   }
 

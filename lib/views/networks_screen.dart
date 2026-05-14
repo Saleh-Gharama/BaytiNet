@@ -11,7 +11,6 @@ class NetworksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final usageProvider = Provider.of<UsageProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final networks = usageProvider.usageBySsid;
 
     return Scaffold(
