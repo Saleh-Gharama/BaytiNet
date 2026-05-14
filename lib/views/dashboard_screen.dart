@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../providers/usage_provider.dart';
 import '../providers/theme_provider.dart';
+import '../models/usage_data.dart';
 import '../utils/format_utils.dart';
 import '../widgets/usage_chart.dart';
 import 'networks_screen.dart';
@@ -23,7 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     int totalUsage = 0;
-    List dataForChart = [];
+    List<UsageData> dataForChart = [];
     String filterText = "";
 
     if (_activeFilter == 'day') {
@@ -161,7 +162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildAnalyticsSection(ThemeProvider themeProvider, List dataForChart) {
+  Widget _buildAnalyticsSection(ThemeProvider themeProvider, List<UsageData> dataForChart) {
     return Column(
       children: [
         Row(
@@ -207,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 20, left: 10, bottom: 10),
                   child: UsageChart(
-                    data: dataForChart.cast(),
+                    data: dataForChart,
                     filter: _activeFilter,
                   ),
                 ),

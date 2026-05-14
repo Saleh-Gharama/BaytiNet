@@ -20,15 +20,27 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'baytinet.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
+      onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
+  // Optimization: Enable WAL mode and set synchronous to NORMAL
+  // This improves write performance and allows concurrent reads/writes
+  Future _onConfigure(Database db) async {
+    await db.execute('PRAGMA journal_mode = WAL');
+    await db.execute('PRAGMA synchronous = NORMAL');
+  }
+
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute("ALTER TABLE usage ADD COLUMN ssid TEXT NOT NULL DEFAULT 'Unknown'");
+    }
+    if (oldVersion < 3) {
+      // Optimization: Add index on timestamp for faster range queries and cleanup
+      await db.execute('CREATE INDEX idx_usage_timestamp ON usage (timestamp)');
     }
   }
 
@@ -41,6 +53,8 @@ class DatabaseHelper {
         ssid TEXT NOT NULL DEFAULT 'Unknown'
       )
     ''');
+    // Optimization: Add index on timestamp for faster range queries and cleanup
+    await db.execute('CREATE INDEX idx_usage_timestamp ON usage (timestamp)');
   }
 
   Future<int> insertUsage(UsageData data) async {
