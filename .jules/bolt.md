@@ -1,3 +1,7 @@
 ## 2025-05-14 - [Data Fetching & Transformation Optimization]
 **Learning:** Consolidating multiple database queries into a single query and performing in-memory filtering/aggregation can significantly reduce I/O overhead. Additionally, using `Future.wait` to parallelize independent asynchronous operations (like DB queries and native service calls) improves responsiveness. Re-sorting data in the UI layer that is already sorted by the data source (DB) is a common but easily avoidable performance pitfall.
 **Action:** Always check if multiple data points can be fetched in a single broader query. Use `Future.wait` for parallel async tasks. Verify data sorting order at the source before re-sorting in widgets.
+
+## 2025-05-15 - [SQLite Write & Query Optimization]
+**Learning:** For mobile applications with periodic background data logging, SQLite default settings (journal_mode=DELETE, synchronous=FULL) can be a bottleneck. Switching to Write-Ahead Logging (WAL) and synchronous=NORMAL significantly improves write throughput and allows concurrent reads during background writes. Additionally, indexing columns used in range-based filtering (like timestamps) is critical for maintaining UI responsiveness as the database grows.
+**Action:** Configure SQLite with WAL mode and appropriate synchronous levels in `onConfigure`. Always index high-cardinality columns used in `WHERE` and `ORDER BY` clauses.
