@@ -25,122 +25,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     int totalUsage = 0;
     List<UsageData> dataForChart = [];
-    String filterText = "";
 
     if (_activeFilter == 'day') {
       totalUsage = usageProvider.totalDailyUsage;
       dataForChart = usageProvider.dailyUsage;
-      filterText = "خلال الـ 24 ساعة الماضية";
     } else if (_activeFilter == 'week') {
       totalUsage = usageProvider.totalWeeklyUsage;
       dataForChart = usageProvider.weeklyUsage;
-      filterText = "خلال الـ 7 أيام الماضية";
     } else {
       totalUsage = usageProvider.totalMonthlyUsage;
       dataForChart = usageProvider.monthlyUsage;
-      filterText = "خلال هذا الشهر";
     }
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          "BaytiNet",
-          style: Theme.of(context).appBarTheme.titleTextStyle,
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: themeProvider.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: IconButton(
-              icon: Icon(
-                themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                color: themeProvider.isDarkMode ? ThemeProvider.primaryNeon : Colors.black87,
-              ),
-              onPressed: () => themeProvider.toggleTheme(),
-            ),
-          ),
-        ],
-      ),
       body: Stack(
         children: [
           // Background Glows
           Positioned(
             top: -50,
             right: -50,
-            child: _buildGlowCircle(ThemeProvider.primaryNeon.withValues(alpha: 0.2), 250),
+            child: _buildGlowCircle(Theme.of(context).colorScheme.primary.withValues(alpha: 0.2), 250),
           ),
           Positioned(
             bottom: 100,
             left: -100,
-            child: _buildGlowCircle(ThemeProvider.secondaryNeon.withValues(alpha: 0.15), 300),
+            child: _buildGlowCircle(Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15), 300),
           ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              bool isWide = constraints.maxWidth > 800;
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 120, 20, 40),
-                  child: Center(
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: isWide
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildUsageHeader(totalUsage, filterText),
-                                      const SizedBox(height: 32),
-                                      _buildAnalyticsSection(themeProvider, dataForChart),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 32),
-                                Expanded(
-                                  flex: 1,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "نظرة عامة",
-                                        style: Theme.of(context).textTheme.displayMedium,
-                                      ),
-                                      const SizedBox(height: 24),
-                                      _buildSummaryGrid(usageProvider, isWide: true),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildUsageHeader(totalUsage, filterText),
-                                const SizedBox(height: 32),
-                                _buildAnalyticsSection(themeProvider, dataForChart),
-                                const SizedBox(height: 32),
-                                Text(
-                                  "نظرة عامة",
-                                  style: Theme.of(context).textTheme.displayMedium,
-                                ),
-                                const SizedBox(height: 16),
-                                _buildSummaryGrid(usageProvider, isWide: false),
-                              ],
-                            ),
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                surfaceTintColor: Colors.transparent,
+                title: Text(
+                  "BaytiNet",
+                  style: Theme.of(context).appBarTheme.titleTextStyle,
+                ),
+                actions: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: themeProvider.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.primary : Colors.black87,
+                      ),
+                      onPressed: () => themeProvider.toggleTheme(),
                     ),
                   ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    bool isWide = constraints.maxWidth > 800;
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                      child: Center(
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: isWide
+                              ? Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildUsageHeader(totalUsage),
+                                          const SizedBox(height: 32),
+                                          _buildAnalyticsSection(themeProvider, dataForChart),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 32),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "نظرة عامة",
+                                            style: Theme.of(context).textTheme.displayMedium,
+                                          ),
+                                          const SizedBox(height: 24),
+                                          _buildSummaryGrid(usageProvider, isWide: true),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildUsageHeader(totalUsage),
+                                    const SizedBox(height: 32),
+                                    _buildAnalyticsSection(themeProvider, dataForChart),
+                                    const SizedBox(height: 32),
+                                    Text(
+                                      "نظرة عامة",
+                                      style: Theme.of(context).textTheme.displayMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildSummaryGrid(usageProvider, isWide: false),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ],
       ),
@@ -220,71 +223,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildUsageHeader(int totalUsage, String subtitle) {
+  Widget _buildUsageHeader(int totalUsage) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            ThemeProvider.primaryNeon,
-            ThemeProvider.primaryNeon.withValues(alpha: 0.8),
-            const Color(0xFFA6CC00),
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+            Theme.of(context).brightness == Brightness.dark ? const Color(0xFFA6CC00) : Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(36),
         boxShadow: [
           BoxShadow(
-            color: ThemeProvider.primaryNeon.withValues(alpha: 0.25),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "إجمالي الاستهلاك",
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Icon(Icons.wifi_tethering_rounded, color: Colors.black.withValues(alpha: 0.4)),
-            ],
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.wifi_tethering_rounded, color: Colors.black.withValues(alpha: 0.5), size: 32),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "إجمالي الاستهلاك",
+            style: TextStyle(
+              color: Colors.black54,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             FormatUtils.formatBytes(totalUsage),
             style: const TextStyle(
               color: Colors.black,
-              fontSize: 48,
+              fontSize: 54,
               fontWeight: FontWeight.w900,
-              letterSpacing: -1,
+              letterSpacing: -1.5,
+              height: 1.1,
             ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              subtitle,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -318,12 +310,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? ThemeProvider.primaryNeon : Colors.transparent,
+          color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: ThemeProvider.primaryNeon.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 10,
                   )
                 ]
@@ -351,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: Theme.of(context).cardColor.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: ThemeProvider.primaryNeon.withValues(alpha: 0.15),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               width: 2.0,
             ),
           ),
@@ -362,27 +354,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSummaryGrid(UsageProvider provider, {required bool isWide}) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isWide ? 1 : 2,
-      mainAxisSpacing: 20,
-      crossAxisSpacing: 20,
-      childAspectRatio: isWide ? 2.5 : 1.3,
-      children: [
-        _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, ThemeProvider.primaryNeon),
-        _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, ThemeProvider.secondaryNeon),
-        _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, ThemeProvider.accentPink),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const NetworksScreen()),
-            );
-          },
-          child: _buildMiniCard("الشبكات", "${provider.usageBySsid.length}", Icons.wifi_find_rounded, Colors.greenAccent),
+    if (isWide) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 20),
+          _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, Theme.of(context).colorScheme.secondary),
+          const SizedBox(height: 20),
+          _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, Theme.of(context).colorScheme.tertiary),
+          const SizedBox(height: 20),
+          _buildNetworksCard(provider),
+        ],
+      );
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMiniCard("اليوم", FormatUtils.formatBytes(provider.totalDailyUsage), Icons.bolt_rounded, Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: _buildMiniCard("الأسبوع", FormatUtils.formatBytes(provider.totalWeeklyUsage), Icons.auto_graph_rounded, Theme.of(context).colorScheme.secondary)),
+              const SizedBox(width: 20),
+              Expanded(child: _buildMiniCard("الشهر", FormatUtils.formatBytes(provider.totalMonthlyUsage), Icons.calendar_month_rounded, Theme.of(context).colorScheme.tertiary)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildNetworksCard(provider),
+        ],
+      );
+    }
+  }
+
+  Widget _buildNetworksCard(UsageProvider provider) {
+    final networks = provider.usageBySsid.entries.toList();
+    final topNetworks = networks.take(3).toList();
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NetworksScreen()),
+        );
+      },
+      child: _buildGlassCard(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.greenAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.wifi_find_rounded, color: Colors.greenAccent, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "الشبكات",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.withValues(alpha: 0.5), size: 14),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (networks.isEmpty)
+                const Text("لا توجد شبكات مسجلة", style: TextStyle(color: Colors.grey))
+              else
+                ...topNetworks.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            FormatUtils.formatBytes(entry.value),
+                            style: TextStyle(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    )),
+              if (networks.length > 3)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      "عرض الكل (${networks.length})",
+                      style: TextStyle(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -404,9 +485,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        spreadRadius: 1,
+                        color: color.withValues(alpha: 0.2),
+                        blurRadius: 6,
+                        spreadRadius: 0,
                       ),
                     ],
                   ),
@@ -418,10 +499,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             Text(
               value,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),

@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../models/usage_data.dart';
-import '../providers/theme_provider.dart';
 
 class UsageChart extends StatelessWidget {
   final List<UsageData> data;
@@ -45,13 +44,52 @@ class UsageChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 30,
+              reservedSize: 45,
               interval: _getBottomInterval(),
               getTitlesWidget: (value, meta) {
-                String text = '';
                 if (filter == 'day') {
-                  text = '${value.toInt()}س';
-                } else if (filter == 'week') {
+                  int val = value.toInt();
+                  if (val % 6 != 0) return const SizedBox.shrink();
+                  
+                  IconData icon;
+                  Color iconColor;
+                  String text;
+
+                  if (val == 0 || val == 24) {
+                    text = '12';
+                    icon = Icons.nightlight_round;
+                    iconColor = Colors.indigoAccent;
+                  } else if (val == 6) {
+                    text = '6';
+                    icon = Icons.wb_twilight;
+                    iconColor = Colors.orangeAccent;
+                  } else if (val == 12) {
+                    text = '12';
+                    icon = Icons.wb_sunny;
+                    iconColor = Colors.yellow;
+                  } else if (val == 18) {
+                    text = '6';
+                    icon = Icons.nights_stay;
+                    iconColor = Colors.deepOrangeAccent;
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, color: iconColor, size: 16),
+                        const SizedBox(height: 2),
+                        Text(text, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  );
+                }
+
+                String text = '';
+                if (filter == 'week') {
                   text = 'ي${value.toInt() + 1}';
                 } else {
                   text = '${value.toInt()}';
@@ -75,8 +113,8 @@ class UsageChart extends StatelessWidget {
             isCurved: true,
             curveSmoothness: 0.35,
             preventCurveOverShooting: true,
-            gradient: const LinearGradient(
-              colors: [ThemeProvider.primaryNeon, ThemeProvider.secondaryNeon],
+            gradient: LinearGradient(
+              colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary],
             ),
             barWidth: 4,
             isStrokeCapRound: true,
@@ -85,16 +123,16 @@ class UsageChart extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  ThemeProvider.primaryNeon.withValues(alpha: 0.3),
-                  ThemeProvider.primaryNeon.withValues(alpha: 0.1),
-                  ThemeProvider.primaryNeon.withValues(alpha: 0),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
             shadow: Shadow(
-              color: ThemeProvider.primaryNeon.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -112,7 +150,7 @@ class UsageChart extends StatelessWidget {
   }
 
   double _getMaxX() {
-    if (filter == 'day') return 23;
+    if (filter == 'day') return 24;
     if (filter == 'week') return 6;
     return 30;
   }
@@ -130,7 +168,8 @@ class UsageChart extends StatelessWidget {
         int hour = DateTime.fromMillisecondsSinceEpoch(d.timestamp).hour;
         hourUsage[hour] = (hourUsage[hour] ?? 0) + (d.usageBytes / (1024 * 1024));
       }
-      return List.generate(24, (i) => FlSpot(i.toDouble(), hourUsage[i] ?? 0));
+      int currentHour = now.hour;
+      return List.generate(currentHour + 1, (i) => FlSpot(i.toDouble(), hourUsage[i] ?? 0));
     } else if (filter == 'week') {
       Map<int, double> dailyUsage = {};
       for (var d in sortedData) {

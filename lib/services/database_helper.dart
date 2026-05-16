@@ -34,7 +34,7 @@ class DatabaseHelper {
       await db.execute('PRAGMA journal_mode = WAL');
       await db.execute('PRAGMA synchronous = NORMAL');
     } catch (e) {
-      print('Error configuring database: $e');
+      // Ignore or log error appropriately
     }
   }
 
@@ -101,5 +101,19 @@ class DatabaseHelper {
       where: 'timestamp < ?',
       whereArgs: [olderThanTimestamp],
     );
+  }
+
+  Future<int> getLastUsageTimestamp() async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'usage',
+      columns: ['timestamp'],
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['timestamp'] as int;
+    }
+    return 0;
   }
 }

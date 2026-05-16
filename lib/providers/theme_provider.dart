@@ -13,6 +13,7 @@ class ThemeProvider with ChangeNotifier {
   }
 
   // Modern Color Palette (Inspired by Movto/Fitness designs)
+  // Dark Mode Colors
   static const Color primaryNeon = Color(0xFFD0FF00); // Lime Green
   static const Color secondaryNeon = Color(0xFF00E5FF); // Cyan
   static const Color accentPink = Color(0xFFFF2D55);
@@ -21,7 +22,12 @@ class ThemeProvider with ChangeNotifier {
   static const Color darkBg = Color(0xFF000000);
   static const Color darkCard = Color(0xFF121212);
 
-  static const Color lightBg = Color(0xFFF2F2F7);
+  // Light Mode Colors (Higher Contrast)
+  static const Color primaryLight = Color(0xFF6B9900); // Darker Lime Green
+  static const Color secondaryLight = Color(0xFF00838F); // Darker Cyan
+  static const Color accentPinkLight = Color(0xFFC2185B); // Darker Pink
+  
+  static const Color lightBg = Color(0xFFF7F7F9);
   static const Color lightCard = Colors.white;
 
   ThemeData get currentTheme => isDarkMode ? darkTheme : lightTheme;
@@ -61,14 +67,14 @@ class ThemeProvider with ChangeNotifier {
 
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: primaryNeon,
+    primaryColor: primaryLight,
     scaffoldBackgroundColor: lightBg,
     cardColor: lightCard,
     useMaterial3: true,
     colorScheme: ColorScheme.light(
-      primary: primaryNeon,
-      secondary: secondaryNeon,
-      tertiary: accentPink,
+      primary: primaryLight,
+      secondary: secondaryLight,
+      tertiary: accentPinkLight,
       surface: lightCard,
       onSurface: Colors.black,
     ),

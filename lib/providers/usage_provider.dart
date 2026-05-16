@@ -45,24 +45,40 @@ class UsageProvider with ChangeNotifier {
 
   Future<void> collectAndStoreData() async {
     final now = DateTime.now();
-    final startOfHour = DateTime(now.year, now.month, now.day, now.hour);
-    final endOfHour = now;
+    final startOfCurrentHour = DateTime(now.year, now.month, now.day, now.hour);
 
-    final usage = await NativeService.getWifiUsage(
-      startOfHour.millisecondsSinceEpoch,
-      endOfHour.millisecondsSinceEpoch
-    );
+    final lastRecordTimeMs = await _dbHelper.getLastUsageTimestamp();
+    // If no records, start from 24 hours ago, otherwise start from the next hour after the last record
+    final lastRecordTime = lastRecordTimeMs > 0 
+        ? DateTime.fromMillisecondsSinceEpoch(lastRecordTimeMs) 
+        : now.subtract(const Duration(hours: 24));
+    
+    DateTime currentCheckHour = DateTime(lastRecordTime.year, lastRecordTime.month, lastRecordTime.day, lastRecordTime.hour);
+    if (lastRecordTimeMs > 0) {
+      currentCheckHour = currentCheckHour.add(const Duration(hours: 1));
+    }
 
     final ssid = await NativeService.getSsid();
 
-    await _dbHelper.insertUsage(UsageData(
-      timestamp: now.millisecondsSinceEpoch,
-      usageBytes: usage,
-      ssid: ssid,
-    ));
+    while (currentCheckHour.isBefore(startOfCurrentHour) || currentCheckHour.isAtSameMomentAs(startOfCurrentHour)) {
+      final endOfCheckHour = currentCheckHour.isAtSameMomentAs(startOfCurrentHour) ? now : currentCheckHour.add(const Duration(hours: 1, milliseconds: -1));
+      
+      final usage = await NativeService.getWifiUsage(
+        currentCheckHour.millisecondsSinceEpoch,
+        endOfCheckHour.millisecondsSinceEpoch
+      );
+
+      await _dbHelper.insertUsage(UsageData(
+        timestamp: endOfCheckHour.millisecondsSinceEpoch,
+        usageBytes: usage,
+        ssid: ssid,
+      ));
+      
+      currentCheckHour = currentCheckHour.add(const Duration(hours: 1));
+    }
 
     // Cleanup old data (older than 2 months)
-    final twoMonthsAgo = now.subtract(Duration(days: 60)).millisecondsSinceEpoch;
+    final twoMonthsAgo = now.subtract(const Duration(days: 60)).millisecondsSinceEpoch;
     await _dbHelper.deleteOldData(twoMonthsAgo);
   }
 
@@ -71,19 +87,19 @@ class UsageProvider with ChangeNotifier {
     final nowMs = now.millisecondsSinceEpoch;
 
     final startOfDay = DateTime(now.year, now.month, now.day);
-    final dayAgo = now.subtract(const Duration(hours: 24));
     final startOfWeek = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
     final startOfMonth = DateTime(now.year, now.month, 1);
 
     try {
+      final startOfDayMs = startOfDay.millisecondsSinceEpoch;
       // Find the earliest start time to fetch all needed data in one query
-      DateTime earliestStart = dayAgo;
+      DateTime earliestStart = startOfDay;
       if (startOfWeek.isBefore(earliestStart)) earliestStart = startOfWeek;
       if (startOfMonth.isBefore(earliestStart)) earliestStart = startOfMonth;
 
       // Optimization: Parallelize native calls and database query
       final results = await Future.wait([
-        NativeService.getWifiUsage(startOfDay.millisecondsSinceEpoch, nowMs),
+        NativeService.getWifiUsage(startOfDayMs, nowMs),
         NativeService.getWifiUsage(startOfWeek.millisecondsSinceEpoch, nowMs),
         NativeService.getWifiUsage(startOfMonth.millisecondsSinceEpoch, nowMs),
         _dbHelper.getUsageInRange(earliestStart.millisecondsSinceEpoch, nowMs),
@@ -95,7 +111,6 @@ class UsageProvider with ChangeNotifier {
       final List<UsageData> allData = results[3] as List<UsageData>;
 
       // Optimization: Filter and aggregate in-memory instead of multiple DB queries
-      final dayAgoMs = dayAgo.millisecondsSinceEpoch;
       final startOfWeekMs = startOfWeek.millisecondsSinceEpoch;
       final startOfMonthMs = startOfMonth.millisecondsSinceEpoch;
 
@@ -105,7 +120,7 @@ class UsageProvider with ChangeNotifier {
       _usageBySsid = {};
 
       for (var data in allData) {
-        if (data.timestamp >= dayAgoMs) {
+        if (data.timestamp >= startOfDayMs) {
           _dailyUsage.add(data);
         }
         if (data.timestamp >= startOfWeekMs) {

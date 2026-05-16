@@ -5,6 +5,7 @@ import 'providers/theme_provider.dart';
 import 'views/dashboard_screen.dart';
 import 'views/permission_screen.dart';
 import 'services/native_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,9 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
   }
 
   Future<void> _checkPermission() async {
+    // Request location permission to fetch Wi-Fi SSID accurately
+    await Permission.locationWhenInUse.request();
+
     bool hasPermission = await NativeService.hasUsagePermission();
     setState(() {
       _hasPermission = hasPermission;
