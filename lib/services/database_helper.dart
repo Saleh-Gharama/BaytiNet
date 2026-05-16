@@ -30,8 +30,12 @@ class DatabaseHelper {
   // Optimization: Enable WAL mode and set synchronous to NORMAL
   // This improves write performance and allows concurrent reads/writes
   Future _onConfigure(Database db) async {
-    await db.execute('PRAGMA journal_mode = WAL');
-    await db.execute('PRAGMA synchronous = NORMAL');
+    try {
+      await db.execute('PRAGMA journal_mode = WAL');
+      await db.execute('PRAGMA synchronous = NORMAL');
+    } catch (e) {
+      print('Error configuring database: $e');
+    }
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -40,7 +44,7 @@ class DatabaseHelper {
     }
     if (oldVersion < 3) {
       // Optimization: Add index on timestamp for faster range queries and cleanup
-      await db.execute('CREATE INDEX idx_usage_timestamp ON usage (timestamp)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage (timestamp)');
     }
   }
 
@@ -54,7 +58,7 @@ class DatabaseHelper {
       )
     ''');
     // Optimization: Add index on timestamp for faster range queries and cleanup
-    await db.execute('CREATE INDEX idx_usage_timestamp ON usage (timestamp)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage (timestamp)');
   }
 
   Future<int> insertUsage(UsageData data) async {
