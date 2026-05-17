@@ -156,11 +156,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color,
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-        child: Container(color: Colors.transparent),
+        gradient: RadialGradient(
+          colors: [
+            color,
+            color.withValues(alpha: 0.0),
+          ],
+        ),
       ),
     );
   }
