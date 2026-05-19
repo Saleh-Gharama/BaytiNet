@@ -90,7 +90,10 @@ class UsageChart extends StatelessWidget {
 
                 String text = '';
                 if (filter == 'week') {
-                  text = 'ي${value.toInt() + 1}';
+                  final now = DateTime.now();
+                  final dayDate = now.subtract(Duration(days: 6 - value.toInt()));
+                  const days = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+                  text = days[dayDate.weekday - 1];
                 } else {
                   text = '${value.toInt()}';
                 }

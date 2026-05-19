@@ -4,6 +4,7 @@ import 'providers/usage_provider.dart';
 import 'providers/theme_provider.dart';
 import 'views/dashboard_screen.dart';
 import 'views/permission_screen.dart';
+import 'views/splash_screen.dart'; // استيراد شاشة البداية الجديدة
 import 'services/native_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -15,7 +16,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => UsageProvider()),
       ],
-      child: BaytiNetApp(),
+      child: const BaytiNetApp(),
     ),
   );
 }
@@ -41,9 +42,11 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
     await Permission.locationWhenInUse.request();
 
     bool hasPermission = await NativeService.hasUsagePermission();
-    setState(() {
-      _hasPermission = hasPermission;
-    });
+    if (mounted) {
+      setState(() {
+        _hasPermission = hasPermission;
+      });
+    }
     if (hasPermission) {
       NativeService.startForegroundService();
     }
@@ -53,12 +56,22 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    if (_hasPermission == null) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: themeProvider.currentTheme,
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
-      );
+    // نحدد الشاشة التالية المناسبة بناءً على الصلاحيات
+    Widget getNextScreen() {
+      if (_hasPermission == null) {
+        return const Scaffold(
+          backgroundColor: Color(0xFF0C0D12),
+          body: Center(child: CircularProgressIndicator(color: Colors.greenAccent)),
+        );
+      }
+      return _hasPermission!
+          ? const DashboardScreen()
+          : PermissionScreen(
+              onGranted: () {
+                setState(() => _hasPermission = true);
+                NativeService.startForegroundService();
+              },
+            );
     }
 
     return MaterialApp(
@@ -70,14 +83,8 @@ class _BaytiNetAppState extends State<BaytiNetApp> {
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
-      home: _hasPermission!
-          ? DashboardScreen()
-          : PermissionScreen(
-              onGranted: () {
-                setState(() => _hasPermission = true);
-                NativeService.startForegroundService();
-              },
-            ),
+      // نجعل الشاشة الافتتاحية هي أول شاشة تظهر للتطبيق
+      home: SplashScreen(nextScreen: getNextScreen()),
     );
   }
 }

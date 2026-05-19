@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local JDK for Gradle build
+/android/jdk17/
+
+# Gradle reports and problems
+/android/build/
+**/problems-report.html
+
+# Reference design assets
+/qwqwqw_images/
+
+

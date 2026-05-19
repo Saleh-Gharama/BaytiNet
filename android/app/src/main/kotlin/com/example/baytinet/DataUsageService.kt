@@ -43,7 +43,7 @@ class DataUsageService : Service() {
         val componentName = android.content.ComponentName(this, UsageWidgetProvider::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
         for (appWidgetId in appWidgetIds) {
-            UsageWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId, usageStr)
+            UsageWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetId)
         }
     }
 
