@@ -73,13 +73,37 @@ class UsageProvider with ChangeNotifier {
         usageBytes: usage,
         ssid: ssid,
       ));
+
+      // Sync with daily summary table
+      final dateStr = "${endOfCheckHour.year}-${endOfCheckHour.month.toString().padLeft(2, '0')}-${endOfCheckHour.day.toString().padLeft(2, '0')}";
+      await _dbHelper.upsertDailySummary(dateStr, ssid, usage);
       
       currentCheckHour = currentCheckHour.add(const Duration(hours: 1));
     }
 
-    // Cleanup old data (older than 2 months)
+    // Cleanup old high-resolution hourly data (older than 2 months)
     final twoMonthsAgo = now.subtract(const Duration(days: 60)).millisecondsSinceEpoch;
     await _dbHelper.deleteOldData(twoMonthsAgo);
+  }
+
+  // Get historical daily data for a specific month (YYYY-MM)
+  Future<List<Map<String, dynamic>>> getHistoryForMonth(String yearMonth) async {
+    return await _dbHelper.getDailySummaryForMonth(yearMonth);
+  }
+
+  // Get historical daily data for a specific date range
+  Future<List<Map<String, dynamic>>> getCustomRangeHistory(String startDate, String endDate) async {
+    return await _dbHelper.getDailySummaryInRange(startDate, endDate);
+  }
+
+  // Get historical hourly data for a specific day
+  Future<List<Map<String, dynamic>>> getHourlyHistoryForDay(String date) async {
+    return await _dbHelper.getHourlySummaryForDay(date);
+  }
+
+  // Get list of months with usage and their totals
+  Future<List<Map<String, dynamic>>> getHistoryMonths() async {
+    return await _dbHelper.getMonthlyUsageHistory();
   }
 
   Future<void> refreshData() async {

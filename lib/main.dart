@@ -8,8 +8,11 @@ import 'views/splash_screen.dart'; // استيراد شاشة البداية ا�
 import 'services/native_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ar', null);
   runApp(
     MultiProvider(
       providers: [

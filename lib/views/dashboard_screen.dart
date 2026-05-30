@@ -7,6 +7,7 @@ import '../models/usage_data.dart';
 import '../utils/format_utils.dart';
 import '../widgets/usage_chart.dart';
 import 'networks_screen.dart';
+import 'history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -65,7 +66,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 actions: [
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    margin: const EdgeInsets.only(right: 16, left: 4, top: 6, bottom: 6),
+                    decoration: BoxDecoration(
+                      color: themeProvider.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.history_rounded,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.primary : Colors.black87,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(right: 4, left: 16, top: 6, bottom: 6),
                     decoration: BoxDecoration(
                       color: themeProvider.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
