@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/native_service.dart';
 import '../services/database_helper.dart';
 import '../models/usage_data.dart';
+import '../models/wifi_session.dart';
 
 class UsageProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -25,22 +26,98 @@ class UsageProvider with ChangeNotifier {
   int get totalMonthlyUsage => _totalMonthlyUsage;
 
   Timer? _timer;
+  StreamSubscription? _networkSub;
+  String? _currentSsid;
 
   UsageProvider() {
     _init();
   }
 
   Future<void> _init() async {
+    _listenToNetworkChanges();
+    await syncAndHandleCurrentNetwork();
     await collectAndStoreData();
     await refreshData();
     _startPeriodicTask();
   }
 
-  void _startPeriodicTask() {
-    _timer = Timer.periodic(Duration(minutes: 30), (timer) async {
-      await collectAndStoreData();
-      refreshData();
+  void _listenToNetworkChanges() {
+    _networkSub = NativeService.networkChangeStream.listen((ssid) async {
+      await handleNetworkChange(ssid);
+    }, onError: (e) {
+      debugPrint("Network stream error: $e");
     });
+  }
+
+  Future<void> syncAndHandleCurrentNetwork() async {
+    final currentSsid = await NativeService.getSsid();
+    await handleNetworkChange(currentSsid);
+  }
+
+  Future<void> handleNetworkChange(String newSsid) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final activeSession = await _dbHelper.getActiveWifiSession();
+    final isDisconnected = newSsid == 'DISCONNECTED' || newSsid.isEmpty;
+    final isSpecialStatus = newSsid == 'إذن الموقع مطلوب';
+
+    if (activeSession != null) {
+      if (activeSession.ssid != newSsid || isDisconnected) {
+        // Close previous session
+        final usage = await NativeService.getWifiUsage(activeSession.startTime, now);
+        await _dbHelper.closeWifiSession(activeSession.id!, now, usage);
+        
+        final dateStr = DateTime.fromMillisecondsSinceEpoch(now).toIso8601String().substring(0, 10);
+        await _dbHelper.upsertDailySummary(dateStr, activeSession.ssid, usage);
+
+        _currentSsid = null;
+      } else {
+        // Same network, update live bytes
+        final liveUsage = await NativeService.getWifiUsage(activeSession.startTime, now);
+        await _dbHelper.updateWifiSessionBytes(activeSession.id!, liveUsage);
+        _currentSsid = newSsid;
+        await refreshData();
+        return;
+      }
+    }
+
+    if (!isDisconnected && !isSpecialStatus && newSsid != _currentSsid) {
+      // Start new session
+      _currentSsid = newSsid;
+      await _dbHelper.insertWifiSession(WifiSession(
+        ssid: newSsid,
+        startTime: now,
+        bytesUsed: 0,
+        isSynced: false,
+      ));
+    }
+
+    await refreshData();
+  }
+
+  void _startPeriodicTask() {
+    _timer = Timer.periodic(const Duration(minutes: 15), (timer) async {
+      await syncActiveSession();
+      await collectAndStoreData();
+      await refreshData();
+    });
+  }
+
+  Future<void> syncActiveSession() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final activeSession = await _dbHelper.getActiveWifiSession();
+    if (activeSession != null && activeSession.id != null) {
+      final usage = await NativeService.getWifiUsage(activeSession.startTime, now);
+      await _dbHelper.updateWifiSessionBytes(activeSession.id!, usage);
+    }
+
+    // Catch-up sync any past unsynced sessions
+    final unsynced = await _dbHelper.getUnsyncedSessions();
+    for (var session in unsynced) {
+      if (session.id != null && session.endTime != null) {
+        final usage = await NativeService.getWifiUsage(session.startTime, session.endTime!);
+        await _dbHelper.closeWifiSession(session.id!, session.endTime!, usage);
+      }
+    }
   }
 
   Future<void> collectAndStoreData() async {
@@ -48,7 +125,6 @@ class UsageProvider with ChangeNotifier {
     final startOfCurrentHour = DateTime(now.year, now.month, now.day, now.hour);
 
     final lastRecordTimeMs = await _dbHelper.getLastUsageTimestamp();
-    // If no records, start from 24 hours ago, otherwise start from the next hour after the last record
     final lastRecordTime = lastRecordTimeMs > 0 
         ? DateTime.fromMillisecondsSinceEpoch(lastRecordTimeMs) 
         : now.subtract(const Duration(hours: 24));
@@ -58,7 +134,7 @@ class UsageProvider with ChangeNotifier {
       currentCheckHour = currentCheckHour.add(const Duration(hours: 1));
     }
 
-    final ssid = await NativeService.getSsid();
+    final currentSsid = await NativeService.getSsid();
 
     while (currentCheckHour.isBefore(startOfCurrentHour) || currentCheckHour.isAtSameMomentAs(startOfCurrentHour)) {
       final endOfCheckHour = currentCheckHour.isAtSameMomentAs(startOfCurrentHour) ? now : currentCheckHour.add(const Duration(hours: 1, milliseconds: -1));
@@ -68,20 +144,25 @@ class UsageProvider with ChangeNotifier {
         endOfCheckHour.millisecondsSinceEpoch
       );
 
+      // Associate with session overlapping this hour if available
+      final sessions = await _dbHelper.getSessionsInRange(
+        currentCheckHour.millisecondsSinceEpoch,
+        endOfCheckHour.millisecondsSinceEpoch,
+      );
+      final hourSsid = sessions.isNotEmpty ? sessions.last.ssid : currentSsid;
+
       await _dbHelper.insertUsage(UsageData(
         timestamp: endOfCheckHour.millisecondsSinceEpoch,
         usageBytes: usage,
-        ssid: ssid,
+        ssid: hourSsid,
       ));
 
-      // Sync with daily summary table
       final dateStr = "${endOfCheckHour.year}-${endOfCheckHour.month.toString().padLeft(2, '0')}-${endOfCheckHour.day.toString().padLeft(2, '0')}";
-      await _dbHelper.upsertDailySummary(dateStr, ssid, usage);
+      await _dbHelper.upsertDailySummary(dateStr, hourSsid, usage);
       
       currentCheckHour = currentCheckHour.add(const Duration(hours: 1));
     }
 
-    // Cleanup old high-resolution hourly data (older than 2 months)
     final twoMonthsAgo = now.subtract(const Duration(days: 60)).millisecondsSinceEpoch;
     await _dbHelper.deleteOldData(twoMonthsAgo);
   }
@@ -116,25 +197,24 @@ class UsageProvider with ChangeNotifier {
 
     try {
       final startOfDayMs = startOfDay.millisecondsSinceEpoch;
-      // Find the earliest start time to fetch all needed data in one query
       DateTime earliestStart = startOfDay;
       if (startOfWeek.isBefore(earliestStart)) earliestStart = startOfWeek;
       if (startOfMonth.isBefore(earliestStart)) earliestStart = startOfMonth;
 
-      // Optimization: Parallelize native calls and database query
       final results = await Future.wait([
         NativeService.getWifiUsage(startOfDayMs, nowMs),
         NativeService.getWifiUsage(startOfWeek.millisecondsSinceEpoch, nowMs),
         NativeService.getWifiUsage(startOfMonth.millisecondsSinceEpoch, nowMs),
         _dbHelper.getUsageInRange(earliestStart.millisecondsSinceEpoch, nowMs),
+        _dbHelper.getUsageBySsidFromSessionsInRange(startOfMonth.millisecondsSinceEpoch, nowMs),
       ]);
 
       _totalDailyUsage = results[0] as int;
       _totalWeeklyUsage = results[1] as int;
       _totalMonthlyUsage = results[2] as int;
       final List<UsageData> allData = results[3] as List<UsageData>;
+      final Map<String, int> sessionSsidUsage = results[4] as Map<String, int>;
 
-      // Optimization: Filter and aggregate in-memory instead of multiple DB queries
       final startOfWeekMs = startOfWeek.millisecondsSinceEpoch;
       final startOfMonthMs = startOfMonth.millisecondsSinceEpoch;
 
@@ -152,20 +232,25 @@ class UsageProvider with ChangeNotifier {
         }
         if (data.timestamp >= startOfMonthMs) {
           _monthlyUsage.add(data);
-          // Aggregate SSID usage for the month
+        }
+      }
+
+      // If we have accurate session-based tracking, use it for per-SSID breakdown
+      if (sessionSsidUsage.isNotEmpty) {
+        _usageBySsid = Map.from(sessionSsidUsage);
+      } else {
+        // Fallback to legacy hourly-aggregated SSID data
+        for (var data in _monthlyUsage) {
           _usageBySsid[data.ssid] = (_usageBySsid[data.ssid] ?? 0) + data.usageBytes;
         }
       }
 
-      // Sort SSID usage by volume (to match DB order)
       var sortedEntries = _usageBySsid.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
       _usageBySsid = Map.fromEntries(sortedEntries);
     } catch (e) {
       debugPrint("Error in refreshData: $e");
-      // Optionally store the error in a variable to show in UI, but for now just prevent crashing
-      // and maybe let's add a dummy value to dailyUsage so we know it hit the catch block
-      _totalDailyUsage = -1; // -1 to indicate error visually
+      _totalDailyUsage = -1;
     }
 
     notifyListeners();
@@ -174,6 +259,7 @@ class UsageProvider with ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
+    _networkSub?.cancel();
     super.dispose();
   }
 }

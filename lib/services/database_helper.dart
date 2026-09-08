@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/usage_data.dart';
+import '../models/wifi_session.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -20,7 +21,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'baytinet.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -71,6 +72,21 @@ class DatabaseHelper {
         // Log or handle migration error
       }
     }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS wifi_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ssid TEXT NOT NULL,
+          bssid TEXT,
+          start_time INTEGER NOT NULL,
+          end_time INTEGER,
+          bytes_used INTEGER DEFAULT 0,
+          is_synced INTEGER DEFAULT 0
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON wifi_sessions (start_time)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_end_time ON wifi_sessions (end_time)');
+    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -94,6 +110,21 @@ class DatabaseHelper {
         PRIMARY KEY (date, ssid)
       )
     ''');
+
+    // Create wifi_sessions table
+    await db.execute('''
+      CREATE TABLE wifi_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ssid TEXT NOT NULL,
+        bssid TEXT,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER,
+        bytes_used INTEGER DEFAULT 0,
+        is_synced INTEGER DEFAULT 0
+      )
+    ''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON wifi_sessions (start_time)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_end_time ON wifi_sessions (end_time)');
   }
 
   Future<int> insertUsage(UsageData data) async {
@@ -227,4 +258,95 @@ class DatabaseHelper {
       ORDER BY month DESC
     ''');
   }
+
+  // --- Wi-Fi Sessions Management (Hybrid Tracking) ---
+
+  Future<int> insertWifiSession(WifiSession session) async {
+    Database db = await database;
+    return await db.insert('wifi_sessions', session.toMap());
+  }
+
+  Future<WifiSession?> getActiveWifiSession() async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wifi_sessions',
+      where: 'end_time IS NULL',
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return WifiSession.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<void> closeWifiSession(int id, int endTime, int bytesUsed) async {
+    Database db = await database;
+    await db.update(
+      'wifi_sessions',
+      {
+        'end_time': endTime,
+        'bytes_used': bytesUsed,
+        'is_synced': 1,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateWifiSessionBytes(int id, int bytesUsed, {bool isSynced = false}) async {
+    Database db = await database;
+    await db.update(
+      'wifi_sessions',
+      {
+        'bytes_used': bytesUsed,
+        'is_synced': isSynced ? 1 : 0,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<WifiSession>> getUnsyncedSessions() async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wifi_sessions',
+      where: 'is_synced = 0 AND end_time IS NOT NULL',
+      orderBy: 'start_time ASC',
+    );
+    return List.generate(maps.length, (i) => WifiSession.fromMap(maps[i]));
+  }
+
+  Future<List<WifiSession>> getSessionsInRange(int startTime, int endTime) async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'wifi_sessions',
+      where: 'start_time <= ? AND (end_time >= ? OR end_time IS NULL)',
+      whereArgs: [endTime, startTime],
+      orderBy: 'start_time ASC',
+    );
+    return List.generate(maps.length, (i) => WifiSession.fromMap(maps[i]));
+  }
+
+  Future<Map<String, int>> getUsageBySsidFromSessionsInRange(int startTime, int endTime) async {
+    Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT ssid, SUM(bytes_used) as totalUsage
+      FROM wifi_sessions
+      WHERE start_time <= ? AND (end_time >= ? OR end_time IS NULL)
+      GROUP BY ssid
+      ORDER BY totalUsage DESC
+    ''', [endTime, startTime]);
+
+    Map<String, int> result = {};
+    for (var map in maps) {
+      final ssid = map['ssid'] as String? ?? 'Unknown';
+      final usage = (map['totalUsage'] as int?) ?? 0;
+      if (usage > 0) {
+        result[ssid] = usage;
+      }
+    }
+    return result;
+  }
 }
+

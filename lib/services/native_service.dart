@@ -4,10 +4,18 @@ import 'dart:io' show Platform;
 
 class NativeService {
   static const platform = MethodChannel('com.example.baytinet/usage');
+  static const EventChannel _eventChannel = EventChannel('com.example.baytinet/network_events');
 
   static bool get _isAndroid {
     if (kIsWeb) return false;
     return Platform.isAndroid;
+  }
+
+  static Stream<String> get networkChangeStream {
+    if (!_isAndroid) {
+      return const Stream.empty();
+    }
+    return _eventChannel.receiveBroadcastStream().map((event) => event.toString());
   }
 
   static Future<int> getWifiUsage(int startTime, int endTime) async {
